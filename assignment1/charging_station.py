@@ -81,9 +81,15 @@ class ArrivalEvent(Event):
         super().__init__(time)
         self.model = model
         self.vehicle_number = vehicle_number
+
+    def schedule_arrival(self):
+        time = self.current_time + 15 * (1 + math.sin(self.vehicle_number*math.pi / 12))**2 + 2
+        arrival_event = ArrivalEvent(time, self, self.vehicle_number + 1)
+        self.sim.schedule(arrival_event)
     
     def execute(self, sim: Simulation):
         if self.cancelled: return
+
         battery_percentage = 0.5 * abs(math.sin(self.vehicle_number * math.pi / 7) + 1)
 
         if len(self.model.queue) == 0:
@@ -115,10 +121,9 @@ def schedule_departure_event(sim: Simulation, vehicle: Vehicle, model: ChargingS
 
 
 class DepartureEvent(Event):
-    def __init__(self, time: float, vehicle: Vehicle, model: ChargingStationModel):
+    def __init__(self, time: float, model: ChargingStationModel):
         super().__init__(time)
         self.model = model
-        self.vehicle = vehicle
     
     def execute(self, sim: Simulation):
         if self.cancelled: return
