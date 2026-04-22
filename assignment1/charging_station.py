@@ -84,15 +84,21 @@ def schedule_arrival(sim: Simulation, vehicle_number: int, model: ChargingStatio
     arrival_event = ArrivalEvent(time, model, vehicle_number+1)
     sim.schedule(arrival_event)
 
-def get_charging_duration(vehicle: Vehicle):
-    return 60 * (1-vehicle.battery_percentage)
-
 def schedule_departure_event(sim: Simulation, vehicle: Vehicle, model: ChargingStationModel):
     vehicle.charging_start = sim.current_time
     dep_time = sim.current_time + get_charging_duration(vehicle)
     dep_event = DepartureEvent(dep_time, vehicle, model)
     vehicle.depature_event = dep_event
     sim.schedule(dep_event)
+
+
+def get_charging_duration(vehicle: Vehicle):
+    return 60 * (1-vehicle.battery_percentage)
+
+def get_battery_percentage(vehicle: Vehicle):
+    return 0.5 * abs(math.sin(vehicle.vehicle_number * math.pi / 7) + 1)
+
+#######################################
 
 class ArrivalEvent(Event):
     def __init__(self, time: float, model: ChargingStationModel, vehicle_number: int):
@@ -103,7 +109,7 @@ class ArrivalEvent(Event):
     def execute(self, sim: Simulation):
         if self.cancelled: return
         print(f"Vehicle {self.vehicle_number} arrived.")
-        battery_percentage = 0.5 * abs(math.sin(self.vehicle_number * math.pi / 7) + 1)
+        battery_percentage = get_battery_percentage()
 
         if len(self.model.queue) == 0 and self.model.has_capacity:
             new_vehicle = Vehicle(self.vehicle_number, sim.current_time, battery_percentage)
@@ -153,7 +159,7 @@ class DepartureEvent(Event):
         queue_len = len(self.model.queue)
         if queue_len > 0 and queue_len % 5 == 0:
             for veh in self.model.queue:
-                departure_time = veh.charging_start + 60 * (1-veh.battery_percentage)
+                departure_time = veh.charging_start + get_charging_duration(veh)
                 if departure_time - sim.current_time <= 15: continue
                 if random.random(0,1) > 0.2: continue
                 print(f"Vehicle is departing early.")
