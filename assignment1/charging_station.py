@@ -8,7 +8,7 @@ from typing import List, Optional
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
-from des_library import Simulation, Event, TimeWeightedStatistic, SampleStatistic
+from des_library import Simulation, Event, TimeWeightedStatistic, SampleStatistic, Counter
 
 
 class Vehicle:
@@ -33,11 +33,16 @@ class ChargingStationModel:
         self.termination_number = termination_number
         self.sim = Simulation()
         self.num_stations = num_stations
-
         self.stations: List[Vehicle] = []
         self.queue: List[Vehicle] = []
-        
         self.completions: int = 0
+
+        self.queue_stat = SampleStatistic()
+        self.charge_stat = SampleStatistic()
+        self.renegings = Counter()
+        self.charger_util_stat = TimeWeightedStatistic()
+        self.early_deps = Counter()
+        self.completed_charges = Counter()
 
     def run(self):
         schedule_arrival(self.sim, 0, self)
