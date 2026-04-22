@@ -30,9 +30,15 @@ class ChargingStationModel:
         self.stations: List[Vehicle] = [None] * num_stations
         self.queue: List[Vehicle] = []
 
-        self.init_arrivals(1)
+        self.init_arrivals(3000)
     
-    
+    def init_arrivals(self, num_arrivals):
+        prev_time = 0
+        for n in range(num_arrivals):
+            time = prev_time + 15 * (1 + math.sin(n*math.pi / 12))**2 + 2
+            arrival_event = ArrivalEvent(time, self, n)
+            self.sim.schedule(arrival_event)
+            prev_time = time
 
     def end_service(self, leaving_vehicle: Vehicle):
         self.stations.remove(leaving_vehicle)
@@ -49,22 +55,15 @@ class ArrivalEvent(Event):
         super().__init__(time)
         self.model = model
         self.vehicle_number = vehicle_number
-
-    def schedule_arrival(self):
-        time = self.current_time + 15 * (1 + math.sin(self.vehicle_number*math.pi / 12))**2 + 2
-        arrival_event = ArrivalEvent(time, self, self.vehicle_number + 1)
-        self.sim.schedule(arrival_event)
     
     def execute(self, sim: Simulation):
         if self.cancelled: return
-
         battery_percentage = 0.5 * abs(math.sin(self.vehicle_number * math.pi / 7) + 1)
         patience = 20 * (1 + abs(math.cos(self.vehicle_number * math.e)))
         reneging_event = RenegingEvent(sim.current_time + patience, self.model)
         new_vehicle = Vehicle(sim.current_time, battery_percentage, reneging_event)
         self.model.insert_vehicle(new_vehicle)
 
-        arrival_event = self.schedule_arival()
 
 class RenegingEvent(Event):
     def __init__(self, time: float, model: ChargingStationModel):
