@@ -35,12 +35,13 @@ class ChargingStationModel:
     
 
     def end_service(self, leaving_vehicle: Vehicle):
-        self.stations.remove(leaving_vehicle)
-        first_vehicle = self.queue.pop(0)
-        self.stations.append(first_vehicle)
+        for veh in self.stations:
+            if veh != leaving_vehicle: continue
+            # TODO: Log statistics
+            # Replace the vehicle with the first in queue
+            veh = self.queue.pop(0)
+            break
 
-    def insert_vehicle(self, new_vehicle):
-        pass
 
 ######################################
 
@@ -62,9 +63,12 @@ class ArrivalEvent(Event):
         patience = 20 * (1 + abs(math.cos(self.vehicle_number * math.e)))
         reneging_event = RenegingEvent(sim.current_time + patience, self.model)
         new_vehicle = Vehicle(sim.current_time, battery_percentage, reneging_event)
+<<<<<<< HEAD
         self.model.insert_vehicle(new_vehicle)
 
         arrival_event = self.schedule_arival()
+=======
+>>>>>>> parent of 5fbe195 (minor changeds)
 
 class RenegingEvent(Event):
     def __init__(self, time: float, model: ChargingStationModel):
@@ -76,10 +80,9 @@ class RenegingEvent(Event):
         sim.cancel()
 
 class DepartureEvent(Event):
-    def __init__(self, time: float, vehicle: Vehicle, model: ChargingStationModel):
+    def __init__(self, time: float, model: ChargingStationModel):
         super().__init__(time)
         self.model = model
-        self.vehicle = vehicle
     
     def execute(self, sim: Simulation):
         if self.cancelled: return
