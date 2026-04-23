@@ -146,13 +146,35 @@ class ArrivalEvent(Event):
             new_vehicle = Vehicle(self.vehicle_number, sim.current_time, battery_percentage)
             self.model.charge_vehicle(new_vehicle)
             schedule_departure_event(sim, new_vehicle, self.model)
-        else:
-            patience = 20 * (1 + abs(math.cos(self.vehicle_number * math.e)))
-            new_vehicle = Vehicle(self.vehicle_number, sim.current_time, battery_percentage)
-            reneging_event = RenegingEvent(sim.current_time + patience, new_vehicle, self.model)
-            new_vehicle.reneging_event = reneging_event
-            self.model.queue_vehicle(new_vehicle)
-            sim.schedule(reneging_event)
+
+            # Schedule new arrival
+            schedule_arrival(sim, self.vehicle_number, self.model)
+            return
+
+        patience = 20 * (1 + abs(math.cos(self.vehicle_number * math.e)))
+        new_vehicle = Vehicle(self.vehicle_number, sim.current_time, battery_percentage)
+        reneging_event = RenegingEvent(sim.current_time + patience, new_vehicle, self.model)
+        new_vehicle.reneging_event = reneging_event
+        self.model.queue_vehicle(new_vehicle)
+        sim.schedule(reneging_event)
+
+        # Handle early departure
+        queue_len = len(self.model.queue)
+        if queue_len > 0 and queue_len % 5 == 0:
+            for veh in self.model.stations:
+                departure_time = veh.charging_start + get_charging_duration(veh)
+                if departure_time - sim.current_time <= 15: continue
+                if random.random() > 0.2: continue
+                print(f"Vehicle is departing early.")
+                # Cancel original departure event
+                veh.depature_event.cancel()
+                # Create early departure event
+                early_dep_time = sim.current_time + 2
+                early_dep_event = DepartureEvent(early_dep_time, veh, self.model, True)
+                veh.depature_event = early_dep_event
+                sim.schedule(early_dep_event)
+        
+        
 
         # Schedule new arrival
         schedule_arrival(sim, self.vehicle_number, self.model)
@@ -187,21 +209,21 @@ class DepartureEvent(Event):
         self.model.charge_vehicle(new_vehicle)
         schedule_departure_event(sim, new_vehicle, self.model)
 
-        # Handle early departure
-        queue_len = len(self.model.queue)
-        if queue_len > 0 and queue_len % 5 == 0:
-            for veh in self.model.stations:
-                departure_time = veh.charging_start + get_charging_duration(veh)
-                if departure_time - sim.current_time <= 15: continue
-                if random.random() > 0.2: continue
-                print(f"Vehicle is departing early.")
-                # Cancel original departure event
-                veh.depature_event.cancel()
-                # Create early departure event
-                early_dep_time = sim.current_time + 2
-                early_dep_event = DepartureEvent(early_dep_time, veh, self.model, True)
-                veh.depature_event = early_dep_event
-                sim.schedule(early_dep_event)
+        # # Handle early departure
+        # queue_len = len(self.model.queue)
+        # if queue_len > 0 and queue_len % 5 == 0:
+        #     for veh in self.model.stations:
+        #         departure_time = veh.charging_start + get_charging_duration(veh)
+        #         if departure_time - sim.current_time <= 15: continue
+        #         if random.random() > 0.2: continue
+        #         print(f"Vehicle is departing early.")
+        #         # Cancel original departure event
+        #         veh.depature_event.cancel()
+        #         # Create early departure event
+        #         early_dep_time = sim.current_time + 2
+        #         early_dep_event = DepartureEvent(early_dep_time, veh, self.model, True)
+        #         veh.depature_event = early_dep_event
+        #         sim.schedule(early_dep_event)
 
 
 if __name__ == "__main__":
