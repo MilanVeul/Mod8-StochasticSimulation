@@ -59,7 +59,6 @@ class ChargingStationModel:
         else:
             self.avg_waiting_time.record(self.sim.current_time - vehicle.arrival_time)
         self.queue.remove(vehicle)
-        self.total_queued_veh.increment()
         self.avg_queue_len.update(self.sim.current_time, len(self.queue))
 
     def charge_vehicle(self, vehicle):
@@ -92,12 +91,12 @@ class ChargingStationModel:
     def report(self):
         now = self.sim.current_time
         print("-------- STATISTICS --------")
+        print(f"Termination Time     {self.sim.current_time:.2f}")
         print(f"Avg Queue Length     {self.avg_queue_len.mean(now):.2f}")
         print(f"Avg Waiting Time     {self.avg_waiting_time.mean():.2f}")
         print(f"Reneging Fraction    {(self.renegings.value / self.total_queued_veh.value):.2f}")
         print(f"Charger Utilisation  {self.charger_util.mean(now):.2f}")
         print(f"Early-Dep Franction  {(self.early_deps.value / self.completions.value):.2f}")
-        print(self.early_deps.value )
 
     def terminate(self):
         self.report()
@@ -139,6 +138,9 @@ class ArrivalEvent(Event):
     
     def execute(self, sim: Simulation):
         if self.cancelled: return
+
+        self.model.total_queued_veh.increment()
+
         print(f"Vehicle {self.vehicle_number} arrived.")
         battery_percentage = get_battery_percentage(self.vehicle_number)
 
