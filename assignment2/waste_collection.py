@@ -38,10 +38,11 @@ class TruckStatus(Enum):
     BUSY = 1
 
 class Request:
-    def __init__(self, type: WasteType, arrival_time, service_time):
+    def __init__(self, type: WasteType, arrival_time, service_time, end_event = None):
         self.type = type
         self.arrival_time = arrival_time
         self.service_time = service_time
+        self.end_service_event = end_event
 
 class Truck:
     def __init__(self, home_district):
@@ -67,7 +68,7 @@ class WasteCollectionModel:
         self.sim = Simulation()
         self.end_time = end_time
 
-        self.district_queues: List[List[Request]] = [] * num_districts
+        self.district_queues: List[List[Request]] = [[] for i in range(num_districts)]
         self.trucks = []
         for i in range(num_trucks):
             self.trucks.append(Truck(home_district=i))
@@ -124,7 +125,7 @@ class Arrival(Event):
 
         # Schedule new event
         inter_arrival_time = random.expovariate(request_arrival_rates[self.district])
-        new_arrival = Arrival(self.time + inter_arrival_time, self.district)
+        new_arrival = Arrival(self.time + inter_arrival_time, self.model, self.district)
         sim.schedule(new_arrival)
 
         # Check if the home truck is available
@@ -137,9 +138,11 @@ class Arrival(Event):
 
 
     def check_rerouting(self, sim: Simulation):
+        home_truck = self.model.trucks[self.district]
         if self.model.queue_len(self.district) <= rerouting_thres:
             return
-        home_truck = self.model.trucks[self.district]
+        if home_truck.status != TruckStatus.BUSY or home_truck.current_location != self.district:
+            return
         sim.schedule(ReroutingEvent(self.time, model, home_truck))
         
 
@@ -203,11 +206,13 @@ class ReroutingEvent(Event):
         self.truck.service(home_request)
 
         # Cancel original EndService event
-        # TODO: Implement
+        interrupted_request.end_service_event.cancel()
 
         # Schedule EndService for home request
         completion_time = self.time + home_request.service_time
-        sim.schedule(EndService(self.model, completion_time, self.truck, self.truck.home_district))
+        end_service = EndService(self.model, completion_time, self.truck, self.truck.home_district)
+        home_request.end_service_event = end_service
+        sim.schedule(end_service)
         
 
 if __name__ == "__main__":
