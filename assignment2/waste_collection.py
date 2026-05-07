@@ -83,6 +83,7 @@ class WasteCollectionModel:
                 return truck
             
     def pop(self, district) -> Request:
+        if len(self.district_queues[district]) == 0: return None
         return self.district_queues[district].pop(0)
 
     def run(self) -> None:
@@ -132,6 +133,7 @@ class Arrival(Event):
         home_truck: Truck = model.trucks[self.district]
         if home_truck.status == TruckStatus.IDLE:
             request = self.model.pop(self.district)
+            assert request is not None
             home_truck.service(request, self.district)
             completion_time = self.time + request.service_time
             sim.schedule(EndService(self.model, completion_time, home_truck, self.district))
@@ -147,7 +149,7 @@ class Arrival(Event):
         
 
 class EndService(Event):
-    def __init__(self, time, model: WasteCollectionModel, truck: Truck, district: int):
+    def __init__(self, model: WasteCollectionModel, time, truck: Truck, district: int):
         super().__init__(time)
         self.model = model
         self.truck = truck
@@ -159,12 +161,14 @@ class EndService(Event):
         # Choose next district to serve, starting from home district
         for i in range(num_districts):
             district = (self.truck.home_district + i) % num_districts
-            request = self.model.pop(district)
-            if not request: continue # Empty queue in this district
+            
+            if len(self.model.district_queues[district]) == 0: continue # Empty queue in this district
 
             if i > 0: # Not in home district, do Bernoulli trial
                 x = random.random()
                 if x >= friendliness: continue
+
+            request = self.model.pop(district)
 
             self.truck.service(request, district)
             completion_time = self.time + request.service_time
@@ -195,8 +199,11 @@ class ReroutingEvent(Event):
         else:
             service_time = type_3_distr.sample()
 
-        # Place request back in queue (head position) 
+        # Cancel original EndService event
         interrupted_request = self.truck.current_request
+        interrupted_request.end_service_event.cancel()
+
+        # Place request back in queue (head position) 
         new_request = Request(self.truck.current_request.type, interrupted_request, service_time)
         self.model.district_queues[self.truck.current_district].insert(0, new_request)
 
@@ -204,9 +211,6 @@ class ReroutingEvent(Event):
         home_request = self.model.pop(self.truck.home_district)
         assert home_request
         self.truck.service(home_request)
-
-        # Cancel original EndService event
-        interrupted_request.end_service_event.cancel()
 
         # Schedule EndService for home request
         completion_time = self.time + home_request.service_time
@@ -216,6 +220,6 @@ class ReroutingEvent(Event):
         
 
 if __name__ == "__main__":
-    model = WasteCollectionModel(seed=70)
+    model = WasteCollectionModel(end_time=200, seed=70)
     model.run()
     # model.report()
