@@ -5,7 +5,7 @@ from typing import List
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
-from des_library import Simulation, Event, Erlang, Exponential
+from des_library import Simulation, Event, Erlang, Exponential, SampleStatistic, TimeWeightedStatistic
 
 # Number of vehicles
 N = num_trucks= 3
@@ -73,7 +73,16 @@ class WasteCollectionModel:
         for i in range(num_trucks):
             self.trucks.append(Truck(home_district=i))
 
-    
+        self.init_statistics()
+
+    def init_statistics(self):
+        self.stat_sojourn_time = SampleStatistic()
+        self.stat_queue_len = TimeWeightedStatistic()
+
+    def update_queue_len_stat(self):
+        total_len = sum(len(q) for q in self.district_queues)
+        self.stat_queue_len.update(self.sim.current_time, total_len)
+
     def queue_len(self, district) -> int:
         return len(self.district_queues[district])
     
@@ -138,6 +147,8 @@ class Arrival(Event):
             completion_time = self.time + request.service_time
             sim.schedule(EndService(self.model, completion_time, home_truck, self.district))
 
+        # Log statistic
+        self.model.update_queue_len_stat()
 
     def check_rerouting(self, sim: Simulation):
         home_truck = self.model.trucks[self.district]
@@ -157,6 +168,11 @@ class EndService(Event):
 
     def execute(self, sim: Simulation) -> None:
         if self.cancelled: return
+
+        # Record total waiting time (sojourn time)
+        finished_request = self.truck.current_request
+        sojourn_time = sim.current_time - finished_request.arrival_time
+        self.model.stat_sojourn_time.record(sojourn_time)
 
         # Choose next district to serve, starting from home district
         for i in range(num_districts):
@@ -179,6 +195,9 @@ class EndService(Event):
         self.truck.status = TruckStatus.IDLE
         self.truck.current_district = self.truck.home_district
         self.truck.current_request = None
+
+        # Log statistic
+        self.model.update_queue_len_stat()
 
 
 class ReroutingEvent(Event):
