@@ -1,0 +1,200 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="p1TJa5BcRQNbjUpfWNHe">
+    <mxGraphModel dx="1488" dy="1046" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-6" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-1" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="Start" vertex="1">
+          <mxGeometry height="80" width="120" x="365" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-89" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-88" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-5" parent="1" style="whiteSpace=wrap;html=1;" value="&lt;div&gt;initialization&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="365" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-18" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-17" value="Arrival Event">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-60" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-59" value="Rerouting Event">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-69" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-68" value="EndService Event">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-13" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Type of Event" vertex="1">
+          <mxGeometry height="90" width="95" x="378" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-20" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-19" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-17" parent="1" style="whiteSpace=wrap;html=1;" value="Determine waste Type and Service Time" vertex="1">
+          <mxGeometry height="60" width="120" x="580" y="505" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-39" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-29">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-19" parent="1" style="whiteSpace=wrap;html=1;" value="Queue request to Arrival District" vertex="1">
+          <mxGeometry height="60" width="120" x="580" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-96" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-88">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-23" parent="1" style="whiteSpace=wrap;html=1;" value="Schedule new Arrival Event" vertex="1">
+          <mxGeometry height="60" width="120" x="750" y="995" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-43" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-42" value="&amp;gt;K">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-53" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-23" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-57" connectable="0" parent="ZNxlPKL8FIjBPvzFcWSh-53" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="&amp;lt;= K" vertex="1">
+          <mxGeometry relative="1" x="-0.7543" y="-1" as="geometry">
+            <mxPoint x="-13" y="-1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-29" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Queue length at district" vertex="1">
+          <mxGeometry height="110" width="120" x="580" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-51" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-32" parent="1" style="whiteSpace=wrap;html=1;" value="Schedule Rerouting Event" vertex="1">
+          <mxGeometry height="60" width="120" x="580" y="1130" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-45" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-42" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-44" value="Yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-52" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-42" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-55" connectable="0" parent="ZNxlPKL8FIjBPvzFcWSh-52" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="No" vertex="1">
+          <mxGeometry relative="1" x="-0.5" y="-3" as="geometry">
+            <mxPoint x="-20" y="-3" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-42" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Is home Truck busy?" vertex="1">
+          <mxGeometry height="110" width="120" x="580" y="820" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-46" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-44" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-23" value="No">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-50" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-44" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-32" value="&lt;div&gt;Yes&lt;/div&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-44" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Is home Truck away?" vertex="1">
+          <mxGeometry height="110" width="120" x="580" y="970" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-62" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-59" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-61" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-59" parent="1" style="whiteSpace=wrap;html=1;" value="Cancel EndService Event of current request" vertex="1">
+          <mxGeometry height="60" width="120" x="150" y="505" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-64" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-61" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-63" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-61" parent="1" style="whiteSpace=wrap;html=1;" value="Put interrupted request at head of queue with new Service Time" vertex="1">
+          <mxGeometry height="60" width="120" x="150" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-66" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-63" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-65" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-63" parent="1" style="whiteSpace=wrap;html=1;" value="Service home district request" vertex="1">
+          <mxGeometry height="60" width="120" x="150" y="695" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-99" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-65" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-88">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="110" y="830" />
+              <mxPoint x="110" y="315" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-65" parent="1" style="whiteSpace=wrap;html=1;" value="Schedule EndService request" vertex="1">
+          <mxGeometry height="60" width="120" x="150" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-82" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-68" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-76" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-68" parent="1" style="whiteSpace=wrap;html=1;" value="Find next district with non-empty queue" vertex="1">
+          <mxGeometry height="60" width="120" x="365" y="635" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-74" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-70" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-68" value="No">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-83" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-70" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-72" value="Yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-70" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Did&amp;nbsp; Bernoulli trial succeed?" vertex="1">
+          <mxGeometry height="122.5" width="122.5" x="363.75" y="847.5" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-97" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-72" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-88">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="110" y="990" />
+              <mxPoint x="110" y="315" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-72" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Service head of queue request" vertex="1">
+          <mxGeometry height="60" width="120" x="150" y="960" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-77" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-76" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-70" value="Yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-78" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-76" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-80" value="No">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="320" y="770" />
+              <mxPoint x="320" y="909" />
+            </Array>
+            <mxPoint x="328" y="930" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-76" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Exists?" vertex="1">
+          <mxGeometry height="80" width="80" x="385" y="730" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-98" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-80" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-88">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="110" y="909" />
+              <mxPoint x="110" y="315" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-80" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Go idle at home district" vertex="1">
+          <mxGeometry height="60" width="120" x="150" y="878.75" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-95" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-86" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-13" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-86" parent="1" style="whiteSpace=wrap;html=1;" value="Get next event from queue" vertex="1">
+          <mxGeometry height="60" width="120" x="366.25" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-90" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-88" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-86" value="No">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-93" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-88" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0;exitDx=0;exitDy=0;" target="ZNxlPKL8FIjBPvzFcWSh-92" value="Yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-88" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Simulation finished?" vertex="1">
+          <mxGeometry height="90" width="95" x="378" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-91" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="Stop" vertex="1">
+          <mxGeometry height="80" width="120" x="530" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-94" edge="1" parent="1" source="ZNxlPKL8FIjBPvzFcWSh-92" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="ZNxlPKL8FIjBPvzFcWSh-91" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ZNxlPKL8FIjBPvzFcWSh-92" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Report Statistics" vertex="1">
+          <mxGeometry height="60" width="120" x="530" y="170" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
