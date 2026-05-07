@@ -37,6 +37,9 @@ class TruckStatus(Enum):
     IDLE = 0
     BUSY = 1
 
+AVG_WAITING_TIME = 'avg_waiting_time'
+AVG_QUEUE_LEN = 'avg_queue_len'
+
 class Request:
     def __init__(self, type: WasteType, arrival_time, service_time, end_event = None):
         self.type = type
@@ -78,6 +81,12 @@ class WasteCollectionModel:
     def init_statistics(self):
         self.stat_sojourn_time = SampleStatistic()
         self.stat_queue_len = TimeWeightedStatistic()
+
+    def report(self):
+        stats = {}
+        stats[AVG_QUEUE_LEN] = self.stat_queue_len.mean(self.sim.current_time)
+        stats[AVG_WAITING_TIME] = self.stat_sojourn_time.mean()
+        return stats
 
     def update_queue_len_stat(self):
         total_len = sum(len(q) for q in self.district_queues)
@@ -145,7 +154,9 @@ class Arrival(Event):
             assert request is not None
             home_truck.service(request, self.district)
             completion_time = self.time + request.service_time
-            sim.schedule(EndService(self.model, completion_time, home_truck, self.district))
+            end_service_request = EndService(self.model, completion_time, home_truck, self.district)
+            request.end_service_event = end_service_request
+            sim.schedule(end_service_request)
 
         # Log statistic
         self.model.update_queue_len_stat()
@@ -154,7 +165,7 @@ class Arrival(Event):
         home_truck = self.model.trucks[self.district]
         if self.model.queue_len(self.district) <= rerouting_thres:
             return
-        if home_truck.status != TruckStatus.BUSY or home_truck.current_location != self.district:
+        if home_truck.status != TruckStatus.BUSY or home_truck.current_district != self.district:
             return
         sim.schedule(ReroutingEvent(self.time, model, home_truck))
         
@@ -188,7 +199,9 @@ class EndService(Event):
 
             self.truck.service(request, district)
             completion_time = self.time + request.service_time
-            sim.schedule(EndService(self.model, completion_time, self.truck, district))
+            end_service_event = EndService(self.model, completion_time, self.truck, district)
+            request.end_service_event = end_service_event
+            sim.schedule(end_service_event)
             return
 
         # If no requests, go idle at home
@@ -223,13 +236,13 @@ class ReroutingEvent(Event):
         interrupted_request.end_service_event.cancel()
 
         # Place request back in queue (head position) 
-        new_request = Request(self.truck.current_request.type, interrupted_request, service_time)
+        new_request = Request(interrupted_request.type, interrupted_request.arrival_time, service_time)
         self.model.district_queues[self.truck.current_district].insert(0, new_request)
 
         # Service head request in home district queue
         home_request = self.model.pop(self.truck.home_district)
         assert home_request
-        self.truck.service(home_request)
+        self.truck.service(home_request, self.truck.home_district)
 
         # Schedule EndService for home request
         completion_time = self.time + home_request.service_time
@@ -239,6 +252,6 @@ class ReroutingEvent(Event):
         
 
 if __name__ == "__main__":
-    model = WasteCollectionModel(end_time=200, seed=70)
+    model = WasteCollectionModel(end_time=200000, seed=70)
     model.run()
-    # model.report()
+    print(model.report())
