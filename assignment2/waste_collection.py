@@ -2,6 +2,7 @@ from __future__ import annotations
 import os, sys, random, math
 from enum import Enum
 from typing import List, Tuple
+from long_term_statistics import BatchMeansMethod
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
@@ -36,10 +37,6 @@ class WasteType(Enum):
 class TruckStatus(Enum):
     IDLE = 0
     BUSY = 1
-
-AVG_WAITING_TIME = 'avg_waiting_time'
-AVG_QUEUE_LEN = 'avg_queue_len'
-TRUCK_UTILISATION = 'truck_utilisation'
 
 class Request:
     def __init__(self, type: WasteType, arrival_time, service_time, end_event = None):
@@ -77,31 +74,21 @@ class WasteCollectionModel:
         for i in range(num_trucks):
             self.trucks.append(Truck(home_district=i))
 
-        self.init_statistics()
+        self.stat_holder = BatchMeansMethod(self, 10, 50)
+        
 
-    def init_statistics(self):
-        self.stat_sojourn_time = SampleStatistic()
-        self.stat_queue_len = TimeWeightedStatistic()
-        self.stat_truck_util = [TimeWeightedStatistic() for _ in self.trucks]
-        for stat in self.stat_truck_util:
-            stat.update(0.0, False)
-
-    def report(self):
-        stats = {}
-        stats[AVG_QUEUE_LEN] = self.stat_queue_len.mean(self.sim.current_time)
-        stats[AVG_WAITING_TIME] = self.stat_sojourn_time.mean()
-        stats[TRUCK_UTILISATION] = [util.mean(self.sim.current_time) for util in self.stat_truck_util]
-        return stats
-
+    # Methods to update statistics
+    def record_sojourn(self, sojourn_time):
+        self.stat_holder.stat_sojourn_time.record(sojourn_time)
     def update_queue_len_stat(self):
         total_len = sum(len(q) for q in self.district_queues)
-        self.stat_queue_len.update(self.sim.current_time, total_len)
-
+        self.stat_holder.stat_queue_len.update(self.sim.current_time, total_len)
     def update_truck_util_stats(self):
         for truck in self.trucks:
             self.update_truck_util_stat(truck, truck.status == TruckStatus.BUSY)
     def update_truck_util_stat(self, truck: Truck, busy: bool = True):
-        self.stat_truck_util[truck.home_district].update(self.sim.current_time, busy)
+        self.stat_holder.stat_truck_util[truck.home_district].update(self.sim.current_time, busy)
+
 
     def queue_len(self, district) -> int:
         return len(self.district_queues[district])
@@ -122,6 +109,9 @@ class WasteCollectionModel:
         
         # Run Simulation
         self.sim.run(stop_condition=lambda sim: sim.current_time > self.end_time)
+
+    def report(self):
+        return self.stat_holder.report()
         
 
 def randomized_waste_and_service_time() -> Tuple[WasteType, float]:
@@ -129,7 +119,7 @@ def randomized_waste_and_service_time() -> Tuple[WasteType, float]:
     if x < p_organic_waste:
         waste = WasteType.ORGANIC
         service_time = type_1_distr.sample()
-    if x < p_organic_waste + p_recyclable_waste:
+    elif x < p_organic_waste + p_recyclable_waste:
         waste = WasteType.RECYCLABLE
         service_time = type_2_distr.sample()
     else:
@@ -151,7 +141,7 @@ class Arrival(Event):
 
         # Queue request
         request = Request(waste, self.time, service_time)
-        model.district_queues[self.district].append(request)
+        self.model.district_queues[self.district].append(request)
 
         # Check rerouting
         self.check_rerouting(sim)
@@ -185,7 +175,7 @@ class Arrival(Event):
         if self.model.queue_len(self.district) <= rerouting_thres:
             return
         if home_truck.status == TruckStatus.BUSY and home_truck.current_district != home_truck.home_district:
-            sim.schedule(ReroutingEvent(self.time, model, home_truck))
+            sim.schedule(ReroutingEvent(self.time, self.model, home_truck))
         
 
 class EndService(Event):
@@ -201,7 +191,7 @@ class EndService(Event):
         # Record total waiting time (sojourn time)
         finished_request = self.truck.current_request
         sojourn_time = sim.current_time - finished_request.arrival_time
-        self.model.stat_sojourn_time.record(sojourn_time)
+        self.model.record_sojourn(sojourn_time)
 
         # Choose next district to serve, starting from home district
         for i in range(num_districts):
