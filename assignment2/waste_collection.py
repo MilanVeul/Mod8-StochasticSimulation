@@ -89,7 +89,9 @@ class WasteCollectionModel:
             self.update_truck_util_stat(truck, truck.status == TruckStatus.BUSY)
     def update_truck_util_stat(self, truck: Truck, busy: bool = True):
         self.stat_holder.stat_truck_util[truck.home_district].update(self.sim.current_time, busy)
-
+    def log_rerouting_rate_stat(self):
+        self.stat_holder.stat_rerouting_rate.increment()
+    
 
     def queue_len(self, district) -> int:
         return len(self.district_queues[district])
@@ -218,7 +220,7 @@ class EndService(Event):
             self.truck.current_district = self.truck.home_district
             self.truck.current_request = None
 
-        # Log statistic
+        # Log statistics
         self.model.update_truck_util_stats()
         self.model.update_queue_len_stat()
 
@@ -253,6 +255,11 @@ class ReroutingEvent(Event):
         end_service = EndService(self.model, completion_time, self.truck, self.truck.home_district)
         home_request.end_service_event = end_service
         sim.schedule(end_service)
+
+        # Log statistics
+        self.model.log_rerouting_rate_stat()
+        self.model.update_truck_util_stats()
+        self.model.update_queue_len_stat()
         
 
 if __name__ == "__main__":
