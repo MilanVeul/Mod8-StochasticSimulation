@@ -20,21 +20,7 @@ class StatisticHolder:
         for stat in self.stat_truck_util:
             stat.update(self.model.sim.current_time, False)
 
-    def report(self):
-        stats = {}
-        stats[AVG_QUEUE_LEN] = self.stat_queue_len.mean(self.model.sim.current_time)
-        stats[AVG_WAITING_TIME] = self.stat_sojourn_time.mean()
-        stats[TRUCK_UTILISATION] = [util.mean(self.model.sim.current_time) for util in self.stat_truck_util]
-        return stats
-
-class BatchMeansMethod(StatisticHolder):
-    def __init__(self, model: 'WasteCollectionModel', warmup_len: int, num_batches: int):
-        super().__init__(model)
-        self.warmup_len = warmup_len
-        self.num_batches = num_batches
-        self.current_batch = 0 # Warm up
-    
-    def init_batch(self):
+    def reset(self):
         """Resets all statistics"""
         time = self.model.sim.current_time
         self.model.stat_sojourn_time.reset()
@@ -43,6 +29,18 @@ class BatchMeansMethod(StatisticHolder):
         for util in self.model.stat_truck_util:
             util.reset()
             util.update(time, False)
+
+    def report(self):
+        stats = {}
+        stats[AVG_QUEUE_LEN] = self.stat_queue_len.mean(self.model.sim.current_time)
+        stats[AVG_WAITING_TIME] = self.stat_sojourn_time.mean()
+        stats[TRUCK_UTILISATION] = [util.mean(self.model.sim.current_time) for util in self.stat_truck_util]
+        return stats
+
+class BatchMeansMethod(StatisticHolder):
+    def __init__(self, model: 'WasteCollectionModel'):
+        super().__init__(model)
+        self.current_batch = 0 # Warm up
 
     def before_hook(self):
         pass
