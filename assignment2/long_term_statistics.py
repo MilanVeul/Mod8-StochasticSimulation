@@ -49,17 +49,13 @@ class StatisticHolder:
         stats[StatisticHolder.REROUTING_RATE] = self.stat_rerouting_rate.rate(batch_time)
         return stats
 
-class BatchMeansMethod(StatisticHolder):
-    def __init__(self, model: 'WasteCollectionModel', warmup_time: int, batch_len: int, num_batches: int):
-        super().__init__(model)
 
-        self.warmup_time = warmup_time
+class LongTermStatistic(StatisticHolder):
+    def __init__(self, model: "WasteCollectionModel", num_batches: int):
+        super().__init__(model)
         self.num_batches = num_batches
-        self.batch_number = 0 # Warm up
-        if warmup_time == 0:
-            self.batch_number
-        self.batch_len = batch_len
         self.reports = []
+
 
     def next_batch(self):
         if self.batch_number != 0:
@@ -72,6 +68,20 @@ class BatchMeansMethod(StatisticHolder):
         if self.batch_number > self.num_batches:
             self.model.sim.stop()
 
+    def before_hook(self, sim: Simulation, event: Event): pass
+    def after_hook(self, sim: Simulation, event: Event): pass
+    
+
+class BatchMeansMethod(LongTermStatistic):
+    def __init__(self, model: 'WasteCollectionModel', warmup_time: int, batch_len: int, num_batches: int):
+        super().__init__(model, num_batches)
+
+        self.warmup_time = warmup_time
+        if warmup_time == 0:
+            self.batch_number = 1
+        self.batch_len = batch_len
+
+
     def before_hook(self, sim: Simulation, event: Event):
         sim_time = sim.current_time
         if self.batch_number == 0: # System is in warmup period
@@ -80,20 +90,10 @@ class BatchMeansMethod(StatisticHolder):
         elif sim_time - self.warmup_time > self.batch_number * self.batch_len: # System is in a batch
             self.next_batch()
     
-    def after_hook(self):
-        pass
 
 class RegenerativeMethod(StatisticHolder):
     def __init__(self):
         pass
-    
-    def before_hook(self, sim: Simulation, event: Event):
-        sim_time = sim.current_time
-        if self.batch_number == 0: # System is in warmup period
-            if sim_time > self.warmup_time:
-                self.next_batch()
-        elif sim_time - self.warmup_time > self.batch_number * self.batch_len: # System is in a batch
-            self.next_batch()
     
     def after_hook(self):
         pass
