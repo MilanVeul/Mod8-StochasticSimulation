@@ -9,14 +9,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 from des_library import Simulation, Event, Erlang, Exponential, SampleStatistic, TimeWeightedStatistic
 
 # Number of vehicles
-N = num_trucks= 3
+N = num_trucks= 1
 # Numer of districts
-M = num_districts = 3
+M = num_districts = 1
 
 # Arrival process
-request_arrival_rates = [0.4] * num_districts
-q_1 = p_organic_waste = 1/3
-q_2 = p_recyclable_waste = 1/3
+request_arrival_rates = [0.5]
+# request_arrival_rates = [0.4] * num_districts
+q_1 = p_organic_waste = 0
+q_2 = p_recyclable_waste = 0
 q_3 = p_general = 1 - q_1 - q_2
 
 # Service time distributions
@@ -25,9 +26,9 @@ type_2_distr = Erlang(k=3, mean=1.5)
 type_3_distr = Exponential(mean=1.0)
 
 # Serve probability (friendliness)
-p = friendliness = 0.5
+p = friendliness = 0
 # Rerouting threshold
-K = rerouting_thres = 5
+K = rerouting_thres = 9999999
 
 class WasteType(Enum):
     ORGANIC = 1
@@ -74,7 +75,7 @@ class WasteCollectionModel:
         for i in range(num_trucks):
             self.trucks.append(Truck(home_district=i))
 
-        self.stat_holder = BatchMeansMethod(self, 10, 50)
+        self.stat_holder = BatchMeansMethod(self)
         self.sim.on_before_event(self.stat_holder.before_hook)
         
 
@@ -114,7 +115,7 @@ class WasteCollectionModel:
         self.sim.run(stop_condition=lambda sim: sim.current_time > self.end_time)
 
     def report(self):
-        return self.stat_holder.report()
+        return self.stat_holder.report(self.sim.current_time)
         
 
 def randomized_waste_and_service_time() -> Tuple[WasteType, float]:
