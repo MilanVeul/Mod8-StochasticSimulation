@@ -2,20 +2,20 @@ from __future__ import annotations
 import os, sys, random, math
 from enum import Enum
 from typing import List, Tuple
-from long_term_statistics import BatchMeansMethod
+from long_term_statistics import StatisticHolder, BatchMeansMethod
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 from des_library import Simulation, Event, Erlang, Exponential, SampleStatistic, TimeWeightedStatistic
 
 # Number of vehicles
-N = num_trucks= 1
+N = num_trucks= 2
 # Numer of districts
-M = num_districts = 1
+M = num_districts = 2
 
 # Arrival process
-request_arrival_rates = [0.5]
-# request_arrival_rates = [0.4] * num_districts
+# request_arrival_rates = [0.5]
+request_arrival_rates = [0.6] * num_districts
 q_1 = p_organic_waste = 0
 q_2 = p_recyclable_waste = 0
 q_3 = p_general = 1 - q_1 - q_2
@@ -26,9 +26,9 @@ type_2_distr = Erlang(k=3, mean=1.5)
 type_3_distr = Exponential(mean=1.0)
 
 # Serve probability (friendliness)
-p = friendliness = 0
+p = friendliness = 1
 # Rerouting threshold
-K = rerouting_thres = 9999999
+K = rerouting_thres = float('inf')
 
 class WasteType(Enum):
     ORGANIC = 1
@@ -264,6 +264,14 @@ class ReroutingEvent(Event):
         
 
 if __name__ == "__main__":
-    model = WasteCollectionModel(end_time=200000, seed=70)
-    model.run()
-    print(model.report())
+    end_times = [10,100,1_000,10_000,100_000,1_000_000,10_000_000]
+    for time in end_times:
+        # print(f"Running for end_time = {time}:")
+        model = WasteCollectionModel(end_time=time, seed=70)
+        model.run()
+        report = model.report()
+
+        p = 26/16
+
+        print(f"{time} & {round(report['avg_waiting_time'], 3)} & {round(report['avg_waiting_time'] - p, 3)} \ \ ")
+        # print({k: round(v, 3) if isinstance(v, (int, float)) else v for k, v in report.items()})
