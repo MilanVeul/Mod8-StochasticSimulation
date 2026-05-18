@@ -3,7 +3,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 from typing import TYPE_CHECKING
 from des_library import SampleStatistic, TimeWeightedStatistic, Counter, Simulation, Event
-from waste_collection import TruckStatus
 if TYPE_CHECKING:
     from waste_collection import WasteCollectionModel
 
@@ -98,8 +97,9 @@ class RegenerativeMethod(LongTermStatistic):
 
     def after_hook(self, sim: Simulation, event: Event):
         empty_queues = all(len(q) == 0 for q in self.model.district_queues)
-        vehicles_idle = all(truck.status == TruckStatus.IDLE for truck in self.model.trucks)
-        
+        vehicles_idle = all(truck.status == 0 for truck in self.model.trucks)
+        if empty_queues and vehicles_idle:
+            self.next_batch()
     
         
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 import os, sys, random, math
 from enum import Enum
 from typing import List, Tuple
-from long_term_statistics import BatchMeansMethod
+from long_term_statistics import BatchMeansMethod, RegenerativeMethod
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
@@ -73,7 +73,8 @@ class WasteCollectionModel:
         for i in range(num_trucks):
             self.trucks.append(Truck(home_district=i))
 
-        self.stat_holder = BatchMeansMethod(self, 0, 100000, 50)
+        # self.stat_holder = BatchMeansMethod(self, 0, 100000, 50)
+        self.stat_holder = RegenerativeMethod(self, 5)
         self.sim.on_before_event(self.stat_holder.before_hook)
         self.sim.on_after_event(self.stat_holder.after_hook)
         
