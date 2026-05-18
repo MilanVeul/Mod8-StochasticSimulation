@@ -3,6 +3,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 
 from typing import TYPE_CHECKING
 from des_library import SampleStatistic, TimeWeightedStatistic, Counter, Simulation, Event
+from waste_collection import TruckStatus
 if TYPE_CHECKING:
     from waste_collection import WasteCollectionModel
 
@@ -91,12 +92,16 @@ class BatchMeansMethod(LongTermStatistic):
             self.next_batch()
     
 
-class RegenerativeMethod(StatisticHolder):
-    def __init__(self):
-        pass
+class RegenerativeMethod(LongTermStatistic):
+    def __init__(self, model: 'WasteCollectionModel', num_batches: int):
+        super().__init__(model, num_batches)
+
+    def after_hook(self, sim: Simulation, event: Event):
+        empty_queues = all(len(q) == 0 for q in self.model.district_queues)
+        vehicles_idle = all(truck.status == TruckStatus.IDLE for truck in self.model.trucks)
+        
     
-    def after_hook(self):
-        pass
+        
 
 
     
