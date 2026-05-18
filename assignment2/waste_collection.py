@@ -75,6 +75,7 @@ class WasteCollectionModel:
             self.trucks.append(Truck(home_district=i))
 
         self.stat_holder = BatchMeansMethod(self, 10, 50)
+        self.sim.on_before_event(self.stat_holder.before_hook)
         
 
     # Methods to update statistics
