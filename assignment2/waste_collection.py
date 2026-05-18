@@ -9,15 +9,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."
 from des_library import Simulation, Event, Erlang, Exponential, SampleStatistic, TimeWeightedStatistic
 
 # Number of vehicles
-N = num_trucks= 1
+N = num_trucks = 3
 # Numer of districts
-M = num_districts = 1
+M = num_districts = 3
 
 # Arrival process
-request_arrival_rates = [0.5]
-# request_arrival_rates = [0.4] * num_districts
-q_1 = p_organic_waste = 0
-q_2 = p_recyclable_waste = 0
+request_arrival_rates = [0.4] * num_districts
+q_1 = p_organic_waste = 1/3
+q_2 = p_recyclable_waste = 1/3
 q_3 = p_general = 1 - q_1 - q_2
 
 # Service time distributions
@@ -26,9 +25,9 @@ type_2_distr = Erlang(k=3, mean=1.5)
 type_3_distr = Exponential(mean=1.0)
 
 # Serve probability (friendliness)
-p = friendliness = 0
+p = friendliness = 0.5
 # Rerouting threshold
-K = rerouting_thres = 9999999
+K = rerouting_thres = 5
 
 class WasteType(Enum):
     ORGANIC = 1
@@ -64,19 +63,19 @@ class Truck:
 
 
 class WasteCollectionModel:
-    def __init__(self, end_time, seed = 70):
+    def __init__(self, seed = 70):
         random.seed(seed)
 
         self.sim = Simulation()
-        self.end_time = end_time
 
         self.district_queues: List[List[Request]] = [[] for i in range(num_districts)]
         self.trucks = []
         for i in range(num_trucks):
             self.trucks.append(Truck(home_district=i))
 
-        self.stat_holder = BatchMeansMethod(self)
+        self.stat_holder = BatchMeansMethod(self, 0, 100000, 50)
         self.sim.on_before_event(self.stat_holder.before_hook)
+        self.sim.on_after_event(self.stat_holder.after_hook)
         
 
     # Methods to update statistics
@@ -84,12 +83,14 @@ class WasteCollectionModel:
         self.stat_holder.stat_sojourn_time.record(sojourn_time)
     def update_queue_len_stat(self):
         total_len = sum(len(q) for q in self.district_queues)
-        self.stat_holder.stat_queue_len.update(self.sim.current_time, total_len)
+        batch_time = self.stat_holder.batch_time()
+        self.stat_holder.stat_queue_len.update(batch_time, total_len)
     def update_truck_util_stats(self):
         for truck in self.trucks:
             self.update_truck_util_stat(truck, truck.status == TruckStatus.BUSY)
     def update_truck_util_stat(self, truck: Truck, busy: bool = True):
-        self.stat_holder.stat_truck_util[truck.home_district].update(self.sim.current_time, busy)
+        batch_time = self.stat_holder.batch_time()
+        self.stat_holder.stat_truck_util[truck.home_district].update(batch_time, busy)
     def log_rerouting_rate_stat(self):
         self.stat_holder.stat_rerouting_rate.increment()
     
@@ -112,10 +113,10 @@ class WasteCollectionModel:
             self.sim.schedule(Arrival(0.0, self, i))
         
         # Run Simulation
-        self.sim.run(stop_condition=lambda sim: sim.current_time > self.end_time)
+        self.sim.run()
 
     def report(self):
-        return self.stat_holder.report(self.sim.current_time)
+        return self.stat_holder.reports
         
 
 def randomized_waste_and_service_time() -> Tuple[WasteType, float]:
@@ -263,7 +264,39 @@ class ReroutingEvent(Event):
         self.model.update_queue_len_stat()
         
 
+def print_report(report):
+    if not report:
+        print("No data to display.")
+        return
+
+    # Table headers
+    headers = ["Index", "Avg Queue Len", "Avg Waiting Time", "Truck Utilisation", "Rerouting Rate"]
+    
+    # Define Column Widths for a clean layout
+    template = "{:<7} | {:<15} | {:<18} | {:<42} | {:<14}"
+    
+    print("-" * 105)
+    print(template.format(*headers))
+    print("-" * 105)
+    
+    for i, row in enumerate(report):
+        batch_nr = i + 1
+        # Format floating points for readability
+        q_len = f"{row.get('avg_queue_len', 0.0):.5f}"
+        w_time = f"{row.get('avg_waiting_time', 0.0):.5f}"
+        r_rate = f"{row.get('rerouting_rate', 0.0):.2f}"
+        
+        # Format the utilization array nicely into a compact string
+        utils = row.get('truck_utilisation', [])
+        utils_str = "[" + ", ".join(f"{u:.3f}" for u in utils) + "]"
+        
+        print(template.format(batch_nr, q_len, w_time, utils_str, r_rate))
+        
+    print("-" * 105)
+
+
 if __name__ == "__main__":
-    model = WasteCollectionModel(end_time=200000, seed=70)
+    model = WasteCollectionModel(seed=70)
     model.run()
-    print(model.report())
+
+    print_report(model.report())
