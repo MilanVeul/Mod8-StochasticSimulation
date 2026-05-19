@@ -74,7 +74,7 @@ class WasteCollectionModel:
             self.trucks.append(Truck(home_district=i))
 
         # self.stat_holder = BatchMeansMethod(self, 0, 100000, 50)
-        self.stat_holder = RegenerativeMethod(self, 5)
+        self.stat_holder = RegenerativeMethod(self, 100)
         self.sim.on_before_event(self.stat_holder.before_hook)
         self.sim.on_after_event(self.stat_holder.after_hook)
         

@@ -55,19 +55,23 @@ class LongTermStatistic(StatisticHolder):
         super().__init__(model)
         self.num_batches = num_batches
         self.reports = []
+        self.batch_number = 1
+        self.batch_start = 0
 
 
     def next_batch(self):
+        sim = self.model.sim
         if self.batch_number != 0:
-            self.reports.append(self.report(self.batch_len))
+            self.reports.append(self.report(sim.current_time - self.batch_start))
 
-        self.batch_start = self.model.sim.current_time
+        self.batch_start = sim.current_time
         self.batch_number += 1
         self.reset()
 
         if self.batch_number > self.num_batches:
-            self.model.sim.stop()
+            sim.stop()
 
+    # Overwrite these
     def before_hook(self, sim: Simulation, event: Event): pass
     def after_hook(self, sim: Simulation, event: Event): pass
     
@@ -77,8 +81,8 @@ class BatchMeansMethod(LongTermStatistic):
         super().__init__(model, num_batches)
 
         self.warmup_time = warmup_time
-        if warmup_time == 0:
-            self.batch_number = 1
+        if warmup_time != 0:
+            self.batch_number = 0
         self.batch_len = batch_len
 
 
@@ -97,7 +101,7 @@ class RegenerativeMethod(LongTermStatistic):
 
     def after_hook(self, sim: Simulation, event: Event):
         empty_queues = all(len(q) == 0 for q in self.model.district_queues)
-        vehicles_idle = all(truck.status == 0 for truck in self.model.trucks)
+        vehicles_idle = all(truck.status.value == 0 for truck in self.model.trucks) # I cannot import TruckStatus enum because of circular imports
         if empty_queues and vehicles_idle:
             self.next_batch()
     
