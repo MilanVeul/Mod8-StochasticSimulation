@@ -2,7 +2,7 @@ from __future__ import annotations
 import os, sys, random, math
 from enum import Enum
 from typing import List, Tuple
-from long_term_statistics import BatchMeansMethod, RegenerativeMethod
+from long_term_statistics import LongTermStatistic
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
@@ -65,7 +65,6 @@ class Truck:
 class WasteCollectionModel:
     def __init__(self, seed = 70):
         random.seed(seed)
-
         self.sim = Simulation()
 
         self.district_queues: List[List[Request]] = [[] for i in range(num_districts)]
@@ -73,11 +72,11 @@ class WasteCollectionModel:
         for i in range(num_trucks):
             self.trucks.append(Truck(home_district=i))
 
-        # self.stat_holder = BatchMeansMethod(self, 0, 100000, 50)
-        self.stat_holder = RegenerativeMethod(self, 100)
-        self.sim.on_before_event(self.stat_holder.before_hook)
-        self.sim.on_after_event(self.stat_holder.after_hook)
         
+    def set_statistics_method(self, stat: LongTermStatistic):
+        self.stat_holder = stat
+        self.sim.on_before_event(stat.before_hook)
+        self.sim.on_after_event(stat.after_hook)
 
     # Methods to update statistics
     def record_sojourn(self, sojourn_time):
@@ -264,40 +263,3 @@ class ReroutingEvent(Event):
         self.model.update_truck_util_stats()
         self.model.update_queue_len_stat()
         
-
-def print_report(report):
-    if not report:
-        print("No data to display.")
-        return
-
-    # Table headers
-    headers = ["Index", "Avg Queue Len", "Avg Waiting Time", "Truck Utilisation", "Rerouting Rate"]
-    
-    # Define Column Widths for a clean layout
-    template = "{:<7} | {:<15} | {:<18} | {:<42} | {:<14}"
-    
-    print("-" * 105)
-    print(template.format(*headers))
-    print("-" * 105)
-    
-    for i, row in enumerate(report):
-        batch_nr = i + 1
-        # Format floating points for readability
-        q_len = f"{row.get('avg_queue_len', 0.0):.5f}"
-        w_time = f"{row.get('avg_waiting_time', 0.0):.5f}"
-        r_rate = f"{row.get('rerouting_rate', 0.0):.2f}"
-        
-        # Format the utilization array nicely into a compact string
-        utils = row.get('truck_utilisation', [])
-        utils_str = "[" + ", ".join(f"{u:.3f}" for u in utils) + "]"
-        
-        print(template.format(batch_nr, q_len, w_time, utils_str, r_rate))
-        
-    print("-" * 105)
-
-
-if __name__ == "__main__":
-    model = WasteCollectionModel(seed=70)
-    model.run()
-
-    print_report(model.report())
