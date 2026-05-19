@@ -8,12 +8,22 @@ from des_library import SampleStatistic, TimeWeightedStatistic, Counter, Simulat
 if TYPE_CHECKING:
     from waste_collection import WasteCollectionModel
 
-def min_batch_number(current_batch_number, data, precision, alpha=0.05):
-    t = stats.t.ppf(1-alpha/2, df=current_batch_number-1)
+def batch_number_lower_bound(data, precision, alpha=0.05):
+    r = len(data)
+    t = stats.t.ppf(1-alpha/2, df=r-1)
     var = np.var(data, ddof=1)
     mean = np.mean(data)
     min_batch = t*t * var / (precision/(1+precision) * mean)**2
     return min_batch
+
+def confidence_interval(data, alpha):
+    r = len(data)
+    mean = np.mean(data)
+    t = stats.t.ppf(1-alpha/2, df=r-1)
+    var = np.var(data, ddof=1)
+
+    diff = t * (var/r)**0.5
+    return (mean - diff, mean + diff)
 
 
 def print_report(report):
@@ -32,7 +42,7 @@ def print_report(report):
         batch_nr = i + 1
         q_len = f"{row.get(StatisticHolder.AVG_QUEUE_LEN, 0.0):.5f}"
         w_time = f"{row.get(StatisticHolder.AVG_WAITING_TIME, 0.0):.5f}"
-        r_rate = f"{row.get(StatisticHolder.REROUTING_RATE, 0.0):.5f}"
+        r_rate = f"{row.get(StatisticHolder.REROUTING_RATE, 0.0):.8f}"
         
         utils = row.get(StatisticHolder.TRUCK_UTILISATION, [])
         utils_str = "[" + ", ".join(f"{u:.3f}" for u in utils) + "]"
