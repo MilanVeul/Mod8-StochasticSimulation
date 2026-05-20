@@ -32,6 +32,7 @@ def run():
     print("  Waiting time  ", batch_number_lower_bound(get_stat(report, StatisticHolder.AVG_WAITING_TIME), precision=precision, alpha=alpha))
     print("  Queue len     ", batch_number_lower_bound(get_stat(report, StatisticHolder.AVG_QUEUE_LEN), precision=precision, alpha=alpha))
     print("  Truck util    ", [batch_number_lower_bound(truck, precision=precision, alpha=alpha) for truck in get_stat(report, StatisticHolder.TRUCK_UTILISATION)])
+    print("  Rerouting     ", batch_number_lower_bound(get_stat(report, StatisticHolder.REROUTING_RATE), precision=precision, alpha=alpha))
 
     # Point estimations
     print("\nPoint estimations:")

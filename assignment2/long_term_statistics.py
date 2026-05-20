@@ -143,6 +143,10 @@ class RegenerativeMethod(LongTermStatistic):
         super().__init__(model, num_batches)
 
     def after_hook(self, sim: Simulation, event: Event):
+        is_arrival = event.__class__.__name__ == "ArrivalEvent"
+        if not is_arrival:
+            return
+        
         empty_queues = all(len(q) == 0 for q in self.model.district_queues)
         vehicles_idle = all(truck.status.value == 0 for truck in self.model.trucks) # IDLE -> I cannot import TruckStatus enum because of circular imports
         if empty_queues and vehicles_idle:
