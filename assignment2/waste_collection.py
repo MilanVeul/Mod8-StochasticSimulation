@@ -156,12 +156,18 @@ class Arrival(Event):
         new_arrival = Arrival(self.time + inter_arrival_time, self.model, self.district)
         sim.schedule(new_arrival)
 
-        # Check if the home truck is available
+        # Check if a truck is available
         for i in range(num_districts):
             district = (self.district - i) % num_districts
             truck = self.model.trucks[district]
             if truck.status != TruckStatus.IDLE:
                 continue
+            
+            # Do friendliness check for foreign trucks
+            if district != self.district:
+                x = random.random()
+                if x >= friendliness: continue
+
             request = self.model.pop(self.district)
             assert request is not None
             truck.service(request, self.district)
