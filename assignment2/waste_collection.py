@@ -14,8 +14,8 @@ N = num_trucks= 2
 M = num_districts = 2
 
 # Arrival process
-# request_arrival_rates = [0.5]
-request_arrival_rates = [0.6] * num_districts
+request_arrival_rates = [0.5]
+# request_arrival_rates = [0.5] * num_districts
 q_1 = p_organic_waste = 0
 q_2 = p_recyclable_waste = 0
 q_3 = p_general = 1 - q_1 - q_2
@@ -28,7 +28,7 @@ type_3_distr = Exponential(mean=1.0)
 # Serve probability (friendliness)
 p = friendliness = 1
 # Rerouting threshold
-K = rerouting_thres = float('inf')
+K = rerouting_thres = float("inf")
 
 class WasteType(Enum):
     ORGANIC = 1
@@ -161,6 +161,12 @@ class Arrival(Event):
             truck = self.model.trucks[district]
             if truck.status != TruckStatus.IDLE:
                 continue
+
+            # Do friendliness check for foreign trucks
+            if district != self.district:
+                x = random.random()
+                if x >= friendliness: continue
+
             request = self.model.pop(self.district)
             assert request is not None
             truck.service(request, self.district)
@@ -270,8 +276,8 @@ if __name__ == "__main__":
         model = WasteCollectionModel(end_time=time, seed=70)
         model.run()
         report = model.report()
+        print(report)
+        # p = 26/16
 
-        p = 26/16
-
-        print(f"{time} & {round(report['avg_waiting_time'], 3)} & {round(report['avg_waiting_time'] - p, 3)} \ \ ")
+        # print(f"{time} & {round(report['avg_waiting_time'], 3)} & {round(report['avg_waiting_time'] - p, 3)} \ \ ")
         # print({k: round(v, 3) if isinstance(v, (int, float)) else v for k, v in report.items()})
