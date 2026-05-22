@@ -31,8 +31,8 @@ def print_report(report):
         print("No data to display.")
         return
 
-    headers = ["Index", "Avg Queue Len", "Avg Waiting Time", "Truck Utilisation", "Rerouting Rate"]
-    template = "{:<5} | {:<15} | {:<16} | {:<21} | {:<15}"
+    headers = ["Index", "Batch len", "Avg Queue Len", "Avg Waiting Time", "Truck Utilisation", "Rerouting Rate"]
+    template = "{:<5} | {:<8} | {:<15} | {:<16} | {:<21} | {:<15}"
     
     print("-" * 80)
     print(template.format(*headers))
@@ -43,11 +43,12 @@ def print_report(report):
         q_len = f"{row.get(StatisticHolder.AVG_QUEUE_LEN, 0.0):.5f}"
         w_time = f"{row.get(StatisticHolder.AVG_WAITING_TIME, 0.0):.5f}"
         r_rate = f"{row.get(StatisticHolder.REROUTING_RATE, 0.0):.8f}"
+        b_len = f"{row.get(StatisticHolder.BATCH_LENGTH, 0):.0f}"
         
         utils = row.get(StatisticHolder.TRUCK_UTILISATION, [])
         utils_str = "[" + ", ".join(f"{u:.3f}" for u in utils) + "]"
         
-        print(template.format(batch_nr, q_len, w_time, utils_str, r_rate))
+        print(template.format(batch_nr, b_len, q_len, w_time, utils_str, r_rate))
         
     print("-" * 80)
 
@@ -57,6 +58,7 @@ class StatisticHolder:
     AVG_QUEUE_LEN = 'avg_queue_len'
     REROUTING_RATE = 'rerouting_rate'
     TRUCK_UTILISATION = 'truck_utilisation'
+    BATCH_LENGTH = 'batch_length'
 
     def __init__(self, model: "WasteCollectionModel"):
         self.model = model
@@ -90,6 +92,7 @@ class StatisticHolder:
         stats[StatisticHolder.AVG_WAITING_TIME] = self.stat_sojourn_time.mean()
         stats[StatisticHolder.TRUCK_UTILISATION] = [util.mean(batch_time) for util in self.stat_truck_util]
         stats[StatisticHolder.REROUTING_RATE] = self.stat_rerouting_rate.rate(batch_time)
+        stats[StatisticHolder.BATCH_LENGTH] = batch_time
         return stats
 
 
@@ -103,6 +106,7 @@ class LongTermStatistic(StatisticHolder):
 
 
     def next_batch(self):
+        print("next cycle")
         sim = self.model.sim
         if self.batch_number != 0:
             self.reports.append(self.report(sim.current_time - self.batch_start))
@@ -142,13 +146,14 @@ class RegenerativeMethod(LongTermStatistic):
     def __init__(self, model: 'WasteCollectionModel', num_batches: int):
         super().__init__(model, num_batches)
 
-    def after_hook(self, sim: Simulation, event: Event):
-        is_arrival = event.__class__.__name__ == "ArrivalEvent"
+    def before_hook(self, sim: Simulation, event: Event):
+        is_arrival = event.__class__.__name__ == "Arrival"
         if not is_arrival:
             return
         
         empty_queues = all(len(q) == 0 for q in self.model.district_queues)
         vehicles_idle = all(truck.status.value == 0 for truck in self.model.trucks) # IDLE -> I cannot import TruckStatus enum because of circular imports
+
         if empty_queues and vehicles_idle:
             self.next_batch()
     

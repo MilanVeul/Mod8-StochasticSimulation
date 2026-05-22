@@ -14,12 +14,11 @@ def get_stat(report, stat: str):
         return [list(row) for row in zip(*data)]
     return data
 
-def run():
+def run_batch_means():
     model = WasteCollectionModel(seed=70)
 
     # Initiate statistic method
     stat_method = BatchMeansMethod(model, 0, 50000, num_batches)
-    # stat_method = RegenerativeMethod(model, 1000)
     model.set_statistics_method(stat_method)
 
     model.run()
@@ -47,6 +46,22 @@ def run():
     print("  Queue len     ", confidence_interval(get_stat(report, StatisticHolder.AVG_QUEUE_LEN), alpha))
     print("  Truck util    ", [confidence_interval(truck, alpha) for truck in get_stat(report, StatisticHolder.TRUCK_UTILISATION)])
     print("  Rerouting     ", confidence_interval(get_stat(report, StatisticHolder.REROUTING_RATE), alpha))
+
+def run_regenerative():
+    model = WasteCollectionModel(seed=70)
+
+    # Initiate statistic method
+    stat_method = RegenerativeMethod(model, 1000)
+    model.set_statistics_method(stat_method)
+
+    model.run()
+    report = model.report()
+
+    print_report(report)
+
+def run():
+    # run_batch_means()
+    run_regenerative()
 
 
 if __name__ == "__main__":
