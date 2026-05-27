@@ -25,7 +25,7 @@ type_2_distr = Erlang(k=3, mean=1.5)
 type_3_distr = Exponential(mean=1.0)
 
 # Serve probability (friendliness)
-p = friendliness = 0.5
+p = friendliness = 0.51
 # Rerouting threshold
 K = rerouting_thres = 5
 
