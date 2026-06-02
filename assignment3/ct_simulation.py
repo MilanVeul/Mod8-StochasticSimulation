@@ -11,6 +11,8 @@ NUM_CHAIRS = 3
 NUM_SCANNERS_OFFICE_HOURS = 2
 NUM_SCANNERS_OUTSIDE_OFFICE_HOURS = 1
 
+SLOTS_PER_DAYPART = 32 # 15 minutes slots
+
 class PatientType(Enum):
     IN = 1
     OUT = 2
@@ -29,6 +31,9 @@ class CTScannerModel:
 
         self.emergency_queue: List = []
         self.normal_queue: List = []
+        
+        self.schedule: List = [[None]*2*SLOTS_PER_DAYPART for _ in range(5)]
+        self.waiting_list: List = []
         
         # Simulation starts in the night
         self.active_scanners = 0
@@ -54,6 +59,12 @@ class CTScannerModel:
         if len(self.normal_queue) > 0:
             return self.normal_queue.pop(0)
         return None
+    
+    def schedule_patient(self) -> int:
+        """Schedules a patient and returns the scheduled time."""
+        time = self.sim.current_time
+        weekday = simtime.weekday(time)
+
 
     @property
     def queue_size(self) -> int:
@@ -177,3 +188,14 @@ class EndScanEvent(Event):
         sim.schedule(start_event)
         self.model.active_scanners -= 1
     
+class ScheduleNextWeekEvent(Event):
+    def __init__(self, model: CTScannerModel, time):
+        super().__init__(time)
+        self.model: CTScannerModel = model
+    
+    def execute(self, sim: Simulation):
+        # TODO: Schedule patients on waiting list to next week
+        
+        next_time = sim.current_time + 7*24*60 # next week
+        next_event = ScheduleNextWeekEvent(self.model, next_time)
+        sim.schedule(next_event)
