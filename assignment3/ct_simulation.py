@@ -1,5 +1,5 @@
 from __future__ import annotations
-import sys, os, random
+import sys, os, random, math
 from enum import Enum
 from typing import List, Optional
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
@@ -15,11 +15,8 @@ class PatientType(Enum):
     IN = 1
     OUT = 2
     EMERGENCY = 3
-class OperationalMode(Enum):
-    OFFICE_HOURS = 1
-    OUTSIDE_OFFICE_HOURS = 2
 
-class Patient():
+class Patient:
     def __init__(self, patient_type: PatientType, request_day: int):
         self.type: PatientType = patient_type
         self.request_day: int = request_day 
@@ -34,16 +31,14 @@ class CTScannerModel:
         self.normal_queue: List = []
         
         # Simulation starts in the night
-        self.sim.schedule(ToggleOfficeHoursEvent(self, 8*60))
-        self.operational_mode = OperationalMode.OUTSIDE_OFFICE_HOURS
-        self.active_scanners = NUM_SCANNERS_OUTSIDE_OFFICE_HOURS
-        self.scanners = NUM_SCANNERS_OUTSIDE_OFFICE_HOURS
+        self.active_scanners = 0
 
     def init_distribution(self, seed):
         random.seed(seed)
         self.distr_scan_time = Uniform(10, 19)
-        self.distr_emergency_patients = Exponential(24*60 / 24)
-        self.distr_out_patients = Exponential(24*60 / 23)
+        self.distr_emergency_patients = Exponential(24 / 24 * 60)
+        self.distr_out_patients = Exponential(24 / 23 * 60)
+        self.distr_in_patients = Exponential(24 / 153 * 60)
 
     def add_to_queue(self, patient: Patient):
         """Adds a patient to the correct priority queue."""
@@ -59,11 +54,28 @@ class CTScannerModel:
         if len(self.normal_queue) > 0:
             return self.normal_queue.pop(0)
         return None
-    
+
     @property
-    def queue_size(self):
+    def queue_size(self) -> int:
         """Returns the total queue size."""
         return len(self.normal_queue) + len(self.emergency_queue)
+    
+    @property
+    def in_office_hours(self) -> bool:
+        time = self.sim.current_time
+        weekday = simtime.day(time) <= 4
+        office_hours = 8*60 <= simtime.daytime(time) <= 16*60
+        if weekday and office_hours:
+            return True
+        return False
+    
+    @property
+    def scanners(self) -> int:
+        if self.in_office_hours:
+            return NUM_SCANNERS_OFFICE_HOURS
+        return NUM_SCANNERS_OUTSIDE_OFFICE_HOURS
+
+
 
 class RequestScanEvent(Event):
     """Handles a request for a scan for all patient types, and schedules a new request."""
@@ -71,6 +83,27 @@ class RequestScanEvent(Event):
         super().__init__(time)
         self.model: CTScannerModel = model
         self.patient_type = patient_type
+
+    def get_current_inpatient_rate(self, simulation_time):
+        """Returns the rate of the inpatient requests as determined in the project report."""
+        daytime = simtime.day_time(simulation_time)
+        if daytime < 9*60 or daytime > 15*60:
+            return 9 / (24*60) 
+        else:
+            return 9 + 72 * (1 + math.cos(2*math.pi*daytime / 180 + math.pi)) / (24*60)
+    
+    def next_inpatient_request_time(self, simulation_time):
+        """Returns the next inpatient request time."""
+        time = simulation_time
+        while True:
+            time = time + self.model.distr_in_patients.sample()
+
+            current_rate = self.get_current_inpatient_rate(time)
+            lambda_zero = 1 / self.model.distr_in_patients_office.mean
+            p = current_rate / lambda_zero
+
+            if random.random() < p:
+                return time # We accept this sample
 
     def execute(self, sim: Simulation):
         request_day = simtime.day(sim.current_time)
@@ -81,14 +114,17 @@ class RequestScanEvent(Event):
             arrival_event = ArrivalEvent(sim.current_time, self.model, patient)
             sim.schedule(arrival_event)
             return
+    
         # Schedule patient
         # TODO
 
         # Schedule next request
         if self.patient_type == PatientType.EMERGENCY:
-            next_request_time = self.model.distr_emergency_patients.sample()
+            next_request_time = sim.current_time + self.model.distr_emergency_patients.sample()
         elif self.patient_type == Patient.OUT:
-            next_request_time = self.model.distr_out_patients.sample()
+            next_request_time = sim.current_time + self.model.distr_out_patients.sample()
+        elif self.patient_type == Patient.IN:
+            next_request_time =  self.next_inpatient_request_time(sim.current_time)
 
         next_request = RequestScanEvent(next_request_time, self.model, patient.type)
         sim.schedule(next_request)
@@ -140,28 +176,4 @@ class EndScanEvent(Event):
         start_event = StartScanEvent(self.model, sim.current_time, next_patient)
         sim.schedule(start_event)
         self.model.active_scanners -= 1
-        
-
-class ToggleOfficeHoursEvent(Event):
-    """Switches the system state between office hours and outside office hours."""
-    def __init__(self, model: CTScannerModel, time):
-        super().__init__(time)
-        self.model: CTScannerModel = model
     
-    def execute(self, sim: Simulation):
-        weekday = simtime.weekday(sim.current_time)
-        if self.model.operational_mode == OperationalMode.OFFICE_HOURS:
-            self.model.operational_mode = OperationalMode.OUTSIDE_OFFICE_HOURS
-            self.model.scanners = NUM_SCANNERS_OUTSIDE_OFFICE_HOURS
-
-            if simtime.weekday(sim.current_time) == 4: # Friday
-                next_toggle_time = 8*60 # Monday morning
-            else:
-                next_toggle_time = (weekday+1)*24*60 + 8*60
-        else: 
-            self.model.operational_mode = OperationalMode.OFFICE_HOURS
-            self.model.scanners = NUM_SCANNERS_OFFICE_HOURS
-            next_toggle_time = weekday*24*60 + 16*60
-        
-        next_toggle_event = ToggleOfficeHoursEvent(self.model, next_toggle_time)
-        sim.schedule(next_toggle_event)
