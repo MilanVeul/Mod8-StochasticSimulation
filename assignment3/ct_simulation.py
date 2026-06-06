@@ -49,6 +49,15 @@ class CTScannerModel:
         self.distr_out_patients = Exponential(24 / 23 * 60)
         self.distr_in_patients = Exponential(24 / 153 * 60)
 
+    def run(self):
+        # Schedule first events
+        self.sim.schedule(RequestScanEvent(0, self, PatientType.IN))
+        self.sim.schedule(RequestScanEvent(0, self, PatientType.OUT))
+        self.sim.schedule(RequestScanEvent(0, self, PatientType.EMERGENCY))
+        self.sim.schedule(ScheduleNextWeekEvent(self, 4*24*60)) # Scan first ScheduleNextWeekEvent on friday
+
+        self.sim.run()
+
     def clear_schedule(self):
         # Represents the number of scheduled patients per time slot
         # For each slot: [total # patients planned, # outpatients planned]
