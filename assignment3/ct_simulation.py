@@ -66,6 +66,9 @@ class CTScannerModel:
 
         self.sim.run()
 
+    def report(self):
+        return self.stat_holder.reports
+
     def clear_schedule(self):
         # Represents the number of scheduled patients per time slot
         # For each slot: [total # patients planned, # outpatients planned]
@@ -123,8 +126,8 @@ class CTScannerModel:
         self.stat_holder.stat_inp_req_office_total.increment()
 
     def update_scanner_util(self):
-        is_office_hours = simtime.daypart(self.sim.current_time) != DayPart.OUTSIDE_OFFICE_HOURS
-        # TODO: Implement
+        batch_time = self.stat_holder.batch_time()
+        self.stat_holder.stat_scanner_util.update(batch_time, self.active_scanners)
 
     @property
     def queue_size(self) -> int:
@@ -193,9 +196,9 @@ class RequestScanEvent(Event):
         # Get time of next request
         if self.patient_type == PatientType.EMERGENCY:
             next_request_time = sim.current_time + self.model.distr_emergency_patients.sample()
-        elif self.patient_type == Patient.OUT:
+        elif self.patient_type == PatientType.OUT:
             next_request_time = sim.current_time + self.model.distr_out_patients.sample()
-        elif self.patient_type == Patient.IN:
+        elif self.patient_type == PatientType.IN:
             next_request_time =  self.next_inpatient_request_time(sim.current_time)
         # Schedule next request
         next_request = RequestScanEvent(next_request_time, self.model, patient.type)
@@ -318,6 +321,8 @@ def schedule_inpatient(model: CTScannerModel, patient: Patient, current_time: fl
 # Policy: Only schedule MAX_SCHEDULED_OUTPATIENTS_MORNING per hour in the morning
 #           and MAX_SCHEDULED_OUTPATIENTS_AFTERNOON per hour in the afternoon
 def schedule_outpatients(model: CTScannerModel, patients: List[Patient], current_time: float):
+    if len(patients) == 0:
+        return
     current_weekday = simtime.weekday(current_time)
     scheduling_next_week = (current_weekday >= 4) # Friday or weekend
     

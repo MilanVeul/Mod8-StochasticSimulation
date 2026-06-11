@@ -2,28 +2,11 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 from typing import TYPE_CHECKING
-from scipy import stats
-import numpy as np
 from des_library import SampleStatistic, TimeWeightedStatistic, Counter, Simulation, Event
 if TYPE_CHECKING:
     from ct_simulation import CTScannerModel
 
-def batch_number_lower_bound(data, precision, alpha=0.05):
-    r = len(data)
-    t = stats.t.ppf(1-alpha/2, df=r-1)
-    var = np.var(data, ddof=1)
-    mean = np.mean(data)
-    min_batch = t*t * var / (precision/(1+precision) * mean)**2
-    return min_batch
-
-def batch_confidence_interval(data, alpha):
-    r = len(data)
-    mean = np.mean(data)
-    t = stats.t.ppf(1-alpha/2, df=r-1)
-    var = np.var(data, ddof=1)
-
-    diff = t * (var/r)**0.5
-    return (mean - diff, mean + diff)
+from extra_statistics import ScannerUtilityStatistic
 
 ####################################3
 
@@ -46,13 +29,12 @@ class StatisticHolder:
         self.model = model
         self.batch_start = 0.0
 
-        self.stat_scanner_util_office = TimeWeightedStatistic()
-        self.stat_scanner_util_outside = TimeWeightedStatistic()
-        self.stat_wait_time_out = SampleStatistic() #
-        self.stat_wait_time_emergency = SampleStatistic() #
-        self.stat_access_time = SampleStatistic()  #
-        self.stat_total_patients = Counter() #
-        self.stat_wait_outside = Counter() #
+        self.stat_scanner_util = ScannerUtilityStatistic()
+        self.stat_wait_time_out = SampleStatistic()
+        self.stat_wait_time_emergency = SampleStatistic() 
+        self.stat_access_time = SampleStatistic()
+        self.stat_total_patients = Counter()
+        self.stat_wait_outside = Counter()
         self.stat_inp_req_office_total = Counter()
         self.stat_inp_req_office_wait = Counter()
         
@@ -65,8 +47,7 @@ class StatisticHolder:
 
     def reset(self):
         """Resets all statistics"""
-        self.stat_scanner_util_office.reset()
-        self.stat_scanner_util_outside.reset()
+        self.stat_scanner_util.reset()
         self.stat_wait_time_out.reset()
         self.stat_wait_time_emergency.reset()
         self.stat_access_time.reset()
@@ -116,8 +97,8 @@ class BatchMeansMethod(LongTermStatistic):
 
     def report(self, batch_time):
         stats = {}
-        stats[StatisticHolder.SCANNER_UTIL_OFFICE] = self.stat_scanner_util_office.mean(batch_time)
-        stats[StatisticHolder.SCANNER_UTIL_OUTSIDE] = self.stat_scanner_util_outside.mean(batch_time)
+        stats[StatisticHolder.SCANNER_UTIL_OFFICE] = self.stat_scanner_util.mean(batch_time, True)
+        stats[StatisticHolder.SCANNER_UTIL_OUTSIDE] = self.stat_scanner_util.mean(batch_time, False)
         stats[StatisticHolder.WAIT_TIME_OUT] = self.stat_wait_time_out.mean()
         stats[StatisticHolder.WAIT_TIME_EMERGENCY] = self.stat_wait_time_emergency.mean()
         stats[StatisticHolder.AVG_ACCESS_TIME] = self.stat_access_time.mean()
