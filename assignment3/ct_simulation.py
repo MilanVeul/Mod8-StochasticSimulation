@@ -7,6 +7,9 @@ from des_library import Simulation, Event, Uniform, Exponential
 
 import simtime
 from simtime import DayPart
+from long_term_statistics import LongTermStatistic
+
+SHOWUP_PROBABILITY = 0.84
 
 NUM_CHAIRS = 3
 NUM_SCANNERS_OFFICE_HOURS = 2
@@ -22,9 +25,9 @@ class PatientType(Enum):
     EMERGENCY = 3
 
 class Patient:
-    def __init__(self, patient_type: PatientType, request_day: int):
+    def __init__(self, patient_type: PatientType, request_time: float):
         self.type: PatientType = patient_type
-        self.request_day: int = request_day 
+        self.request_time: int = request_time 
         self.arrival_time: int = -1
 
 class CTScannerModel:
@@ -48,6 +51,11 @@ class CTScannerModel:
         self.distr_emergency_patients = Exponential(24 / 24 * 60)
         self.distr_out_patients = Exponential(24 / 23 * 60)
         self.distr_in_patients = Exponential(24 / 153 * 60)
+    
+    def set_statistics_method(self, stat: LongTermStatistic):
+        self.stat_holder = stat
+        self.sim.on_before_event(stat.before_hook)
+        self.sim.on_after_event(stat.after_hook)
 
     def run(self):
         # Schedule first events
@@ -79,12 +87,44 @@ class CTScannerModel:
         if len(self.normal_queue) > 0:
             return self.normal_queue.pop(0)
         return None
-    
-    def schedule_patient(self) -> int:
-        """Schedules a patient and returns the scheduled time."""
-        time = self.sim.current_time
-        weekday = simtime.weekday(time)
 
+    # Methods to log statistics
+    def record_arrival(self, patient: Patient):
+        time = self.sim.current_time
+        # Record new patient
+        self.stat_holder.stat_total_patients.increment()
+        # Record whether they wait outside
+        if self.queue_size > NUM_CHAIRS:
+            self.stat_holder.stat_wait_outside.increment()
+        # Record if it is an inpatient that requested during office hours, but is helped after office hours
+        requested_during_office = simtime.daypart(patient.request_time) != DayPart.OUTSIDE_OFFICE_HOURS
+        scheduled_after_office = simtime.daytime(time) == 16*60
+        if requested_during_office and scheduled_after_office:
+            self.stat_holder.stat_inp_req_office_wait.increment()
+        # Record wait time
+        wait_time = time - patient.arrival_time
+        if patient.type == PatientType.EMERGENCY:
+            self.stat_holder.stat_wait_time_emergency.record(wait_time)
+        elif patient.type == PatientType.OUT:
+            self.stat_holder.stat_wait_time_out.record(wait_time)
+
+    def record_access_time(self, patient: Patient):
+        if patient.type != PatientType.OUT: return
+        days = simtime.day(self.sim.current_time) - simtime.day(patient.request_time)
+        self.stat_holder.stat_access_time.record(days)
+
+    def record_request(self, patient: Patient):
+        # We only record inpatients during office hours
+        if patient.type != PatientType.IN:
+            return
+        is_office_hours = simtime.daypart(self.sim.current_time) != DayPart.OUTSIDE_OFFICE_HOURS
+        if not is_office_hours:
+            return
+        self.stat_holder.stat_inp_req_office_total.increment()
+
+    def update_scanner_util(self):
+        is_office_hours = simtime.daypart(self.sim.current_time) != DayPart.OUTSIDE_OFFICE_HOURS
+        # TODO: Implement
 
     @property
     def queue_size(self) -> int:
@@ -105,7 +145,6 @@ class CTScannerModel:
         if self.in_office_hours:
             return NUM_SCANNERS_OFFICE_HOURS
         return NUM_SCANNERS_OUTSIDE_OFFICE_HOURS
-
 
 
 class RequestScanEvent(Event):
@@ -137,8 +176,7 @@ class RequestScanEvent(Event):
                 return time # We accept this sample
 
     def execute(self, sim: Simulation):
-        request_day = simtime.day(sim.current_time)
-        patient = Patient(self.patient_type, request_day)
+        patient = Patient(self.patient_type, sim.current_time)
 
         if patient.type == PatientType.EMERGENCY:
             self.move_to_waiting_room(sim, patient)            
@@ -163,6 +201,9 @@ class RequestScanEvent(Event):
         next_request = RequestScanEvent(next_request_time, self.model, patient.type)
         sim.schedule(next_request)
 
+        # Log request
+        self.model.record_request(patient)
+
     def move_to_waiting_room(self, sim: Simulation, patient: Patient):
         """Schedules an arrival event for the given patient."""
         arrival_event = ArrivalEvent(sim.current_time, self.model, patient)
@@ -176,6 +217,12 @@ class ArrivalEvent(Event):
         self.patient: Patient = patient
 
     def execute(self, sim: Simulation):
+        # Log time between request and scheduling
+        self.model.record_access_time(self.patient)
+
+        if random.random() > SHOWUP_PROBABILITY:
+            return # Patient does not show up
+
         self.patient.arrival_time = sim.current_time
 
         if self.model.active_scanners < self.model.scanners:
@@ -184,6 +231,9 @@ class ArrivalEvent(Event):
             return
         # No scanners available; place in queue
         self.model.add_to_queue(self.patient)
+
+        # Log arrival to statistics
+        self.model.record_arrival(self.patient)
 
 class StartScanEvent(Event):
     """Handles the start of a CT scan. Samples the scan time uniformly."""
@@ -199,6 +249,8 @@ class StartScanEvent(Event):
         sim.schedule(end_event)
         self.model.active_scanners += 1
 
+        self.model.update_scanner_util()
+
 class EndScanEvent(Event):
     """Handles the end of a CT scan. Starts the scan of next patient if present."""
     def __init__(self, model: CTScannerModel, time):
@@ -212,6 +264,8 @@ class EndScanEvent(Event):
         start_event = StartScanEvent(self.model, sim.current_time, next_patient)
         sim.schedule(start_event)
         self.model.active_scanners -= 1
+
+        self.model.update_scanner_util()
     
 class ScheduleNextWeekEvent(Event):
     def __init__(self, model: CTScannerModel, time):

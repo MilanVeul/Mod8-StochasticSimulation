@@ -30,15 +30,17 @@ def batch_confidence_interval(data, alpha):
 class StatisticHolder:
     BATCH_LENGTH = 'batch_length'
 
-    # Batch means statistics
-    SCANNER_UTIL_OUTSIDE = "Scanner Util Office"
-    SCANNER_UTIL_OFFICE = "Scanner Util Outside"
+    ############### Batch means statistics #################
+    SCANNER_UTIL_OUTSIDE = "S. Util Office"
+    SCANNER_UTIL_OFFICE = "S. Util Outside"
     AVG_ACCESS_TIME = "Avg Access Time"
+
+    WAIT_TIME_EMERGENCY = "WT Emergency"
+    WAIT_TIME_OUT = "WT Out"
     # Number of patients waiting outside
-    WAIT_OUTSIDE = "Waiting Outside"
-    TOTAL_PATIENTS = "Total Patients"
+    WAIT_OUTSIDE_ROOM = "Waiting Outside"
     # Fraction of Inpatients that request during office hours but cannot be scanned during
-    INPATIENTS_OUTSIDE = "Inpath. not scanned office"
+    INPATIENTS_OUTSIDE = "Inp. not s. during office"
 
     def __init__(self, model: "CTScannerModel"):
         self.model = model
@@ -46,9 +48,11 @@ class StatisticHolder:
 
         self.stat_scanner_util_office = TimeWeightedStatistic()
         self.stat_scanner_util_outside = TimeWeightedStatistic()
-        self.stat_access_time = SampleStatistic()
-        self.stat_total_patients = Counter()
-        self.stat_wait_outside = Counter()
+        self.stat_wait_time_out = SampleStatistic() #
+        self.stat_wait_time_emergency = SampleStatistic() #
+        self.stat_access_time = SampleStatistic()  #
+        self.stat_total_patients = Counter() #
+        self.stat_wait_outside = Counter() #
         self.stat_inp_req_office_total = Counter()
         self.stat_inp_req_office_wait = Counter()
         
@@ -63,6 +67,8 @@ class StatisticHolder:
         """Resets all statistics"""
         self.stat_scanner_util_office.reset()
         self.stat_scanner_util_outside.reset()
+        self.stat_wait_time_out.reset()
+        self.stat_wait_time_emergency.reset()
         self.stat_access_time.reset()
         self.stat_total_patients.reset()
         self.stat_wait_outside.reset()
@@ -110,9 +116,13 @@ class BatchMeansMethod(LongTermStatistic):
 
     def report(self, batch_time):
         stats = {}
-        stats[StatisticHolder.SCANNER_UTIL_OFFICE] = self.stat_scanner_util_office.mean()
-        stats[StatisticHolder.SCANNER_UTIL_OUTSIDE] = self.stat_scanner_util_outside.mean()
-        
+        stats[StatisticHolder.SCANNER_UTIL_OFFICE] = self.stat_scanner_util_office.mean(batch_time)
+        stats[StatisticHolder.SCANNER_UTIL_OUTSIDE] = self.stat_scanner_util_outside.mean(batch_time)
+        stats[StatisticHolder.WAIT_TIME_OUT] = self.stat_wait_time_out.mean()
+        stats[StatisticHolder.WAIT_TIME_EMERGENCY] = self.stat_wait_time_emergency.mean()
+        stats[StatisticHolder.AVG_ACCESS_TIME] = self.stat_access_time.mean()
+        stats[StatisticHolder.WAIT_OUTSIDE_ROOM] = self.stat_wait_outside.fraction(self.stat_total_patients)
+        stats[StatisticHolder.INPATIENTS_OUTSIDE] = self.stat_inp_req_office_wait.fraction(self.stat_inp_req_office_total)
         return stats
 
     def before_hook(self, sim: Simulation, event: Event):
@@ -122,8 +132,3 @@ class BatchMeansMethod(LongTermStatistic):
                 self.next_batch()
         elif sim_time - self.warmup_time > self.batch_number * self.batch_len: # System is in a batch
             self.next_batch()
-    
-        
-
-
-    
