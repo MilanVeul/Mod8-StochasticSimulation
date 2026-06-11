@@ -93,6 +93,7 @@ class CTScannerModel:
 
     # Methods to log statistics
     def record_arrival(self, patient: Patient):
+        print("record")
         time = self.sim.current_time
         # Record new patient
         self.stat_holder.stat_total_patients.increment()

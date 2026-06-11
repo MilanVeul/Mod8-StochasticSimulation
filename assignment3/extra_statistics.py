@@ -8,7 +8,6 @@ from typing import List
 from itertools import chain
 
 import simtime
-from simtime import DayPart
 
 def batch_number_lower_bound(data, precision, alpha=0.05):
     r = len(data)
@@ -52,6 +51,9 @@ class ScannerUtilityStatistic:
             means = [self.stats[i].mean(min(self._get_end_daypart(i//3, i%3), time)) for i in range(1, num_stats, 3)]
         else: 
             means = [self.stats[i].mean(min(self._get_end_daypart(i//3, i%3), time)) for i in chain(range(0, num_stats, 3), range(2, num_stats, 3))]
+        
+        if len(means) == 0:
+            return 0.0
         return sum(means) / len(means)
 
     def reset(self):
@@ -64,7 +66,7 @@ class ScannerUtilityStatistic:
     def _get_end_daypart(self, day, daypart):
         if daypart == 0: return 24*60*day + 8*60
         if daypart == 1: return 24*60*day + 16*60
-        if daypart == 2: return 24*60*day + 24*60 - 1
+        if daypart == 2: return 24*60*day + 24*60
     
     def _get_daypart(self, time):
         daytime = simtime.daytime(time)

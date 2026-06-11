@@ -102,8 +102,8 @@ class BatchMeansMethod(LongTermStatistic):
         stats[StatisticHolder.WAIT_TIME_OUT] = self.stat_wait_time_out.mean()
         stats[StatisticHolder.WAIT_TIME_EMERGENCY] = self.stat_wait_time_emergency.mean()
         stats[StatisticHolder.AVG_ACCESS_TIME] = self.stat_access_time.mean()
-        stats[StatisticHolder.WAIT_OUTSIDE_ROOM] = self.stat_wait_outside.fraction(self.stat_total_patients)
-        stats[StatisticHolder.INPATIENTS_OUTSIDE] = self.stat_inp_req_office_wait.fraction(self.stat_inp_req_office_total)
+        stats[StatisticHolder.WAIT_OUTSIDE_ROOM] = self.stat_wait_outside.fraction(self.stat_total_patients.value)
+        stats[StatisticHolder.INPATIENTS_OUTSIDE] = self.stat_inp_req_office_wait.fraction(self.stat_inp_req_office_total.value)
         return stats
 
     def before_hook(self, sim: Simulation, event: Event):
