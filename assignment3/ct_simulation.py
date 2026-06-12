@@ -15,7 +15,7 @@ NUM_CHAIRS = 3
 NUM_SCANNERS_OFFICE_HOURS = 2
 NUM_SCANNERS_OUTSIDE_OFFICE_HOURS = 1
 
-SLOTS_PER_DAYPART = 32
+SLOTS_PER_DAYPART = 16
 MAX_SCHEDULED_OUTPATIENTS_MORNING = 4
 MAX_SCHEDULED_OUTPATIENTS_AFTERNOON = 3
 
@@ -48,9 +48,9 @@ class CTScannerModel:
     def init_distribution(self, seed):
         random.seed(seed)
         self.distr_scan_time = Uniform(10, 19)
-        self.distr_emergency_patients = Exponential(24 / 24 * 60)
-        self.distr_out_patients = Exponential(24 / 23 * 60)
-        self.distr_in_patients = Exponential(24 / 153 * 60)
+        self.distr_emergency_patients = Exponential(24 / 24 * 60) # 24 per 24 hours
+        self.distr_out_patients = Exponential(8 / 23 * 60) # 23 for 8 office hours
+        self.distr_in_patients = Exponential(24 / 153 * 60) # maximum of 153 per 24 hours
     
     def set_statistics_method(self, stat: LongTermStatistic):
         self.stat_holder = stat
@@ -62,7 +62,7 @@ class CTScannerModel:
         self.sim.schedule(RequestScanEvent(0, self, PatientType.IN))
         self.sim.schedule(RequestScanEvent(0, self, PatientType.OUT))
         self.sim.schedule(RequestScanEvent(0, self, PatientType.EMERGENCY))
-        self.sim.schedule(ScheduleNextWeekEvent(self, 4*24*60)) # Scan first ScheduleNextWeekEvent on friday
+        self.sim.schedule(ScheduleNextWeekEvent(self, 5*24*60 - 1)) # Scan first ScheduleNextWeekEvent on Friday 23:59
 
         self.sim.run()
 
@@ -93,7 +93,6 @@ class CTScannerModel:
 
     # Methods to log statistics
     def record_arrival(self, patient: Patient):
-        print("record")
         time = self.sim.current_time
         # Record new patient
         self.stat_holder.stat_total_patients.increment()
@@ -105,12 +104,8 @@ class CTScannerModel:
         scheduled_after_office = simtime.daytime(time) == 16*60
         if requested_during_office and scheduled_after_office:
             self.stat_holder.stat_inp_req_office_wait.increment()
-        # Record wait time
-        wait_time = time - patient.arrival_time
-        if patient.type == PatientType.EMERGENCY:
-            self.stat_holder.stat_wait_time_emergency.record(wait_time)
-        elif patient.type == PatientType.OUT:
-            self.stat_holder.stat_wait_time_out.record(wait_time)
+        # Record wait start
+        patient.arrival_time = time
 
     def record_access_time(self, patient: Patient):
         if patient.type != PatientType.OUT: return
@@ -129,7 +124,15 @@ class CTScannerModel:
     def update_scanner_util(self):
         batch_time = self.stat_holder.batch_time()
         self.stat_holder.stat_scanner_util.update(batch_time, self.active_scanners)
-
+    
+    def record_wait_time(self, patient: Patient):
+        wait_time = self.sim.current_time - patient.arrival_time
+        # print(wait_time)
+        if patient.type == PatientType.EMERGENCY:
+            self.stat_holder.stat_wait_time_emergency.record(wait_time)
+        elif patient.type == PatientType.OUT:
+            self.stat_holder.stat_wait_time_out.record(wait_time)
+    
     @property
     def queue_size(self) -> int:
         """Returns the total queue size."""
@@ -164,7 +167,7 @@ class RequestScanEvent(Event):
         if daytime < 9*60 or daytime > 15*60:
             return 9 / (24*60) 
         else:
-            return 9 + 72 * (1 + math.cos(2*math.pi*daytime / 180 + math.pi)) / (24*60)
+            return (9 + 72 * (1 + math.cos(2*math.pi*daytime / 180 + math.pi))) / (24*60)
     
     def next_inpatient_request_time(self, simulation_time):
         """Returns the next inpatient request time."""
@@ -178,6 +181,14 @@ class RequestScanEvent(Event):
 
             if random.random() < p:
                 return time # We accept this sample
+
+    def next_outpatient_request_time(self, simulation_time):
+        next_time = simulation_time + self.model.distr_out_patients.sample()
+        if simtime.daytime(next_time) > 16*60: # Time is after office hours
+            overtime = simtime.daytime(next_time) - 16*60
+            day = simtime.day(simulation_time)
+            next_time = day*24*60 + 8*60 + overtime
+        return next_time
 
     def execute(self, sim: Simulation):
         patient = Patient(self.patient_type, sim.current_time)
@@ -198,7 +209,7 @@ class RequestScanEvent(Event):
         if self.patient_type == PatientType.EMERGENCY:
             next_request_time = sim.current_time + self.model.distr_emergency_patients.sample()
         elif self.patient_type == PatientType.OUT:
-            next_request_time = sim.current_time + self.model.distr_out_patients.sample()
+            next_request_time = self.next_outpatient_request_time(sim.current_time)
         elif self.patient_type == PatientType.IN:
             next_request_time =  self.next_inpatient_request_time(sim.current_time)
         # Schedule next request
@@ -224,7 +235,7 @@ class ArrivalEvent(Event):
         # Log time between request and scheduling
         self.model.record_access_time(self.patient)
 
-        if random.random() > SHOWUP_PROBABILITY:
+        if self.patient_type == PatientType.OUT and random.random() > SHOWUP_PROBABILITY:
             return # Patient does not show up
 
         self.patient.arrival_time = sim.current_time
@@ -253,6 +264,7 @@ class StartScanEvent(Event):
         sim.schedule(end_event)
         self.model.active_scanners += 1
 
+        self.model.record_wait_time(self.patient)
         self.model.update_scanner_util()
 
 class EndScanEvent(Event):
@@ -263,10 +275,9 @@ class EndScanEvent(Event):
     
     def execute(self, sim: Simulation):
         next_patient = self.model.next_patient()
-        if next_patient is None:
-            return  # Queue is empty
-        start_event = StartScanEvent(self.model, sim.current_time, next_patient)
-        sim.schedule(start_event)
+        if next_patient is not None:
+            start_event = StartScanEvent(self.model, sim.current_time, next_patient)
+            sim.schedule(start_event)
         self.model.active_scanners -= 1
 
         self.model.update_scanner_util()
@@ -277,9 +288,12 @@ class ScheduleNextWeekEvent(Event):
         self.model: CTScannerModel = model
     
     def execute(self, sim: Simulation):
+        print(f"Planning {len(self.model.waiting_list)} outpatients for next week...")
         self.model.clear_schedule()
-        schedule_outpatients(self.model, self.model.waiting_list, sim.current_time)
+        
+        waiting_list = self.model.waiting_list.copy()
         self.model.waiting_list.clear()
+        schedule_outpatients(self.model, waiting_list, sim.current_time, next_week=True)
         
         # Schedule same event next week again
         next_time = sim.current_time + 7*24*60 # next week
@@ -321,11 +335,14 @@ def schedule_inpatient(model: CTScannerModel, patient: Patient, current_time: fl
 
 # Policy: Only schedule MAX_SCHEDULED_OUTPATIENTS_MORNING per hour in the morning
 #           and MAX_SCHEDULED_OUTPATIENTS_AFTERNOON per hour in the afternoon
-def schedule_outpatients(model: CTScannerModel, patients: List[Patient], current_time: float):
+def schedule_outpatients(model: CTScannerModel, patients: List[Patient], current_time: float, next_week = False):
     if len(patients) == 0:
         return
     current_weekday = simtime.weekday(current_time)
-    scheduling_next_week = (current_weekday >= 4) # Friday or weekend
+    if (not next_week) and current_weekday >= 4: # Friday
+        model.waiting_list.extend(patients)
+        
+
     
     weektime = simtime.weektime(current_time)
     current_patient = 0
@@ -341,9 +358,11 @@ def schedule_outpatients(model: CTScannerModel, patients: List[Patient], current
                 if slot % 4 == 0: 
                     # Count the number of outpatients scheduled in this hour beforehand
                     hourly_outpatients = sum(model.schedule[day][daypart][hour_slot][1] for hour_slot in range(slot, slot+4))
-                is_past_or_today = not scheduling_next_week and (simtime.slot_start(day, daypart, slot) <= weektime or day == current_weekday)
-                if is_past_or_today:
-                    continue # Slot is in the past or today
+                is_past = simtime.slot_start(day, daypart, slot) <= weektime
+                is_today = day == current_weekday
+                is_illegal_slot = (not next_week) and (is_past or is_today)
+                if is_illegal_slot:
+                    continue
                 if hourly_outpatients >= max_hourly_outpatients:
                     continue
 
