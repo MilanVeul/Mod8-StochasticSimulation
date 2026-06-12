@@ -253,6 +253,7 @@ class ArrivalEvent(Event):
         self.patient.arrival_time = sim.current_time
 
         if self.model.active_scanners < self.model.scanners:
+            self.model.active_scanners += 1
             start_event = StartScanEvent(self.model, sim.current_time, self.patient)
             sim.schedule(start_event)
         else:
@@ -274,7 +275,6 @@ class StartScanEvent(Event):
         end_time = sim.current_time + scan_time
         end_event = EndScanEvent(self.model, end_time)
         sim.schedule(end_event)
-        self.model.active_scanners += 1
 
         check_inpatient_transfer(self.model)
 
@@ -288,11 +288,14 @@ class EndScanEvent(Event):
         self.model: CTScannerModel = model
     
     def execute(self, sim: Simulation):
-        next_patient = self.model.next_patient()
-        if next_patient is not None:
-            start_event = StartScanEvent(self.model, sim.current_time, next_patient)
-            sim.schedule(start_event)
         self.model.active_scanners -= 1
+        # Check if there is capacity
+        if self.model.active_scanners < self.model.scanners:
+            next_patient = self.model.next_patient()
+            if next_patient is not None:
+                start_event = StartScanEvent(self.model, sim.current_time, next_patient)
+                sim.schedule(start_event)
+                self.model.active_scanners += 1
 
         check_inpatient_transfer(self.model)
 

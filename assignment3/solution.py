@@ -32,7 +32,7 @@ def print_batch_report(report):
 def run():
     week = 7*24*60
     model = CTScannerModel(70)
-    batch_means = BatchMeansMethod(model, 2*week, 4*week, 10)
+    batch_means = BatchMeansMethod(model, 4*week, 5*week, 10)
     model.set_statistics_method(batch_means)
     model.run()
     report = model.report()

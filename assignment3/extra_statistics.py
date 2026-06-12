@@ -26,59 +26,69 @@ def batch_confidence_interval(data, alpha):
     diff = t * (var/r)**0.5
     return (mean - diff, mean + diff)
 
+
+
 class ScannerUtilityStatistic:
     def __init__(self):
-        self.stats: List[TimeWeightedStatistic] = [TimeWeightedStatistic(0,0)]
-        self._current_value = 0
-
-    def update(self, time: float, value: float):
-        day = simtime.day(time)
-        daypart = self._get_daypart(time)
-        idx = int(3 * day + daypart)
-        
-        # Sequentially backfill all missed day parts
-        while idx >= len(self.stats):
-            current_missing_idx = len(self.stats)
-            m_day = current_missing_idx // 3
-            m_daypart = current_missing_idx % 3
-            
-            start_time = self._get_start_daypart(m_day, m_daypart)
-            last_val = self.stats[-1]._last_value
-            
-            # Close out the previous day part at the boundary line
-            self.stats[-1].update(start_time, last_val)
-            
-            self.stats.append(TimeWeightedStatistic(initial_value=last_val, start_time=start_time))
-            
-        self.stats[idx].update(time, value)
-    
-    def mean(self, time: float, office: bool) -> float:
-        total_duration = 0.0
-        total_weighted_sum = 0.0
-        
-        for i, stat in enumerate(self.stats):
-            day = i // 3
-            daypart = i % 3
-            
-            # Determine if this specific day part belongs to office hours
-            is_weekend = (day % 7) >= 5
-            is_office_part = (daypart == 1) and not is_weekend
-            
-            if is_office_part != office:
-                continue
-                
-            end = min(self._get_end_daypart(day, daypart), time)
-            duration = 8*60
-            
-            total_duration += duration
-            total_weighted_sum += stat.mean(end) * duration
-
-        if total_duration == 0: return 0.0
-        return total_weighted_sum / total_duration
+        self.reset()
 
     def reset(self):
-        self.stats = [TimeWeightedStatistic(0,0)]
+        self.last_time = 0.0
+        self.last_value = 0.0
 
+        # Accumulators for Office Hours
+        self.office_area = 0.0
+        self.office_duration = 0.0
+
+        # Accumulators for Outside Office Hours
+        self.outside_area = 0.0
+        self.outside_duration = 0.0
+
+    def update(self, time: float, value: float):
+        if time <= self.last_time:
+            self.last_value = value
+            return
+
+        # Slice the elapsed interval across daypart boundaries
+        current = self.last_time
+        while current < time:
+            day = simtime.day(current)
+            daypart = self._get_daypart(current)
+
+            end_of_daypart = self._get_end_daypart(day, daypart)
+            next_stop = min(end_of_daypart, time)
+            duration = next_stop - current
+
+            # Prevent infinite looping when current lies exactly on a boundary
+            if duration <= 1e-6:
+                current = next_stop + 1e-6
+                continue
+
+            is_weekend = (day % 7) >= 5
+            is_office = (daypart == 1) and not is_weekend
+
+            if is_office:
+                self.office_area += self.last_value * duration
+                self.office_duration += duration
+            else:
+                self.outside_area += self.last_value * duration
+                self.outside_duration += duration
+
+            current = next_stop
+
+        self.last_time = time
+        self.last_value = value
+
+    def mean(self, time: float, office: bool) -> float:
+        # Flush any remaining unlogged time up to the reporting time
+        if time > self.last_time:
+            self.update(time, self.last_value)
+
+        if office:
+            return self.office_area / self.office_duration if self.office_duration > 0 else 0.0
+        else:
+            return self.outside_area / self.outside_duration if self.outside_duration > 0 else 0.0
+        
     def _get_start_daypart(self, day, daypart):
         if daypart == 0: return 24*60*day
         if daypart == 1: return 24*60*day + 8*60
