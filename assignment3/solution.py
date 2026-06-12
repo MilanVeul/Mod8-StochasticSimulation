@@ -1,29 +1,29 @@
 from ct_simulation import CTScannerModel
-from long_term_statistics import BatchMeansMethod, StatisticHolder
+from long_term_statistics import BatchMeansMethod, StatisticHolder as SH
 
 def print_batch_report(report):
     if not report:
         print("No data to display.")
         return
 
-    headers = ["Index", "S. Util Office", "S. Util Outside", "WT outp", "WT emep"]
-    template = "{:<5} | {:<15} | {:<15} | {:<15} | {:<15}"
+    headers = ["Index", SH.TOTAL_PATIENTS, SH.SCANNER_UTIL_OFFICE, SH.SCANNER_UTIL_OUTSIDE, SH.WAIT_TIME_OUT, SH.WAIT_TIME_EMERGENCY, SH.AVG_ACCESS_TIME]
+    template = "{:<5} | {:<10} | {:<15} | {:<15} | {:<15} | {:<15} | {:<15}"
     
-    print("-" * 80)
+    print("-" * 110)
     print(template.format(*headers))
-    print("-" * 80)
+    print("-" * 110)
     
     for i, row in enumerate(report):
         batch_nr = i + 1
-        s_util_office = f"{row.get(StatisticHolder.SCANNER_UTIL_OFFICE, 0.0):.5f}"
-        s_util_outside = f"{row.get(StatisticHolder.SCANNER_UTIL_OUTSIDE, 0.0):.5f}"
-        wt_out = f"{row.get(StatisticHolder.WAIT_TIME_OUT, 0.0):.8f}"
-        wt_emergency = f"{row.get(StatisticHolder.WAIT_TIME_EMERGENCY, 0.0):.8f}"
+        total = f"{row.get(SH.TOTAL_PATIENTS)}"
+        s_util_office = f"{row.get(SH.SCANNER_UTIL_OFFICE, -1):.5f}"
+        s_util_outside = f"{row.get(SH.SCANNER_UTIL_OUTSIDE, -1):.5f}"
+        wt_out = f"{row.get(SH.WAIT_TIME_OUT, -1):.4f}"
+        wt_emergency = f"{row.get(SH.WAIT_TIME_EMERGENCY, -1):.4f}"
+        access_time = f"{row.get(SH.AVG_ACCESS_TIME, -1):.2f}"
         
-        
-        print(template.format(batch_nr, s_util_office, s_util_outside, wt_out, wt_emergency))
-        
-    print("-" * 80)
+        print(template.format(batch_nr, total, s_util_office, s_util_outside, wt_out, wt_emergency, access_time))
+    print("-" * 110)
 
 def run():
     model = CTScannerModel(70)

@@ -16,14 +16,15 @@ class StatisticHolder:
     ############### Batch means statistics #################
     SCANNER_UTIL_OUTSIDE = "S. Util Office"
     SCANNER_UTIL_OFFICE = "S. Util Outside"
-    AVG_ACCESS_TIME = "Avg Access Time"
+    AVG_ACCESS_TIME = "Access Time"
 
-    WAIT_TIME_EMERGENCY = "WT Emergency"
+    WAIT_TIME_EMERGENCY = "WT emer"
     WAIT_TIME_OUT = "WT Out"
     # Number of patients waiting outside
     WAIT_OUTSIDE_ROOM = "Waiting Outside"
     # Fraction of Inpatients that request during office hours but cannot be scanned during
     INPATIENTS_OUTSIDE = "Inp. not s. during office"
+    TOTAL_PATIENTS = "Total p."
 
     def __init__(self, model: "CTScannerModel"):
         self.model = model
@@ -103,6 +104,7 @@ class BatchMeansMethod(LongTermStatistic):
         stats[StatisticHolder.WAIT_TIME_EMERGENCY] = self.stat_wait_time_emergency.mean()
         stats[StatisticHolder.AVG_ACCESS_TIME] = self.stat_access_time.mean()
         stats[StatisticHolder.WAIT_OUTSIDE_ROOM] = self.stat_wait_outside.fraction(self.stat_total_patients.value)
+        stats[StatisticHolder.TOTAL_PATIENTS] = self.stat_total_patients.value
         stats[StatisticHolder.INPATIENTS_OUTSIDE] = self.stat_inp_req_office_wait.fraction(self.stat_inp_req_office_total.value)
         return stats
 
