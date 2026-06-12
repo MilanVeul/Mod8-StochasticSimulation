@@ -31,30 +31,50 @@ class ScannerUtilityStatistic:
         self.stats: List[TimeWeightedStatistic] = [TimeWeightedStatistic(0,0)]
         self._current_value = 0
 
-    # ASSUMPTION: There is an update at least once per day part
     def update(self, time: float, value: float):
         day = simtime.day(time)
         daypart = self._get_daypart(time)
-        idx = int(3*day + daypart)
-        if idx >= len(self.stats):
-            start_daypart = self._get_start_daypart(day, daypart)
-            self.stats[-1].update(start_daypart, self.stats[-1]._last_value)
-            new_stat = TimeWeightedStatistic(
-                initial_value=self.stats[idx-1]._last_value, 
-                start_time=start_daypart)
-            self.stats.append(new_stat)
+        idx = int(3 * day + daypart)
+        
+        # Sequentially backfill all missed day parts
+        while idx >= len(self.stats):
+            current_missing_idx = len(self.stats)
+            m_day = current_missing_idx // 3
+            m_daypart = current_missing_idx % 3
+            
+            start_time = self._get_start_daypart(m_day, m_daypart)
+            last_val = self.stats[-1]._last_value
+            
+            # Close out the previous day part at the boundary line
+            self.stats[-1].update(start_time, last_val)
+            
+            self.stats.append(TimeWeightedStatistic(initial_value=last_val, start_time=start_time))
+            
         self.stats[idx].update(time, value)
     
-    def mean(self, time, office: bool):
-        num_stats = len(self.stats)
-        if office:
-            means = [self.stats[i].mean(min(self._get_end_daypart(i//3, i%3), time)) for i in range(1, num_stats, 3)]
-        else: 
-            means = [self.stats[i].mean(min(self._get_end_daypart(i//3, i%3), time)) for i in chain(range(0, num_stats, 3), range(2, num_stats, 3))]
+    def mean(self, time: float, office: bool) -> float:
+        total_duration = 0.0
+        total_weighted_sum = 0.0
         
-        if len(means) == 0:
-            return 0.0
-        return sum(means) / len(means)
+        for i, stat in enumerate(self.stats):
+            day = i // 3
+            daypart = i % 3
+            
+            # Determine if this specific day part belongs to office hours
+            is_weekend = (day % 7) >= 5
+            is_office_part = (daypart == 1) and not is_weekend
+            
+            if is_office_part != office:
+                continue
+                
+            end = min(self._get_end_daypart(day, daypart), time)
+            duration = 8*60
+            
+            total_duration += duration
+            total_weighted_sum += stat.mean(end) * duration
+
+        if total_duration == 0: return 0.0
+        return total_weighted_sum / total_duration
 
     def reset(self):
         self.stats = [TimeWeightedStatistic(0,0)]
@@ -75,4 +95,3 @@ class ScannerUtilityStatistic:
         if daytime > 16*60:
             return 2
         return 1
-    

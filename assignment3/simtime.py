@@ -21,6 +21,9 @@ def weekday(simulation_time: float):
     return day(simulation_time) % 7
 
 def daypart(simulation_time: float) -> int:
+    if weekday(simulation_time) >= 5: # Weekend
+        return DayPart.OUTSIDE_OFFICE_HOURS
+
     dtime = daytime(simulation_time)
     if 8*60 <= dtime < 12*60:
         return DayPart.MORNING

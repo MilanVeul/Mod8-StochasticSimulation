@@ -62,8 +62,8 @@ class CTScannerModel:
 
     def run(self):
         # Schedule first events
+        self.sim.schedule(RequestScanEvent(8*60 + 1, self, PatientType.OUT))
         self.sim.schedule(RequestScanEvent(0, self, PatientType.IN))
-        self.sim.schedule(RequestScanEvent(0, self, PatientType.OUT))
         self.sim.schedule(RequestScanEvent(0, self, PatientType.EMERGENCY))
         self.sim.schedule(ScheduleNextWeekEvent(self, 5*24*60 - 1)) # Scan first ScheduleNextWeekEvent on Friday 23:59
 
@@ -137,8 +137,9 @@ class CTScannerModel:
             self.stat_holder.stat_wait_time_out.record(wait_time)
         # Record inpatients that were scanned after office hours
         if patient.type == PatientType.IN:
+            requested_during_office = simtime.daypart(patient.request_time) != DayPart.OUTSIDE_OFFICE_HOURS
             after_office_hours = simtime.daytime(time) > 16*60
-            if after_office_hours:
+            if requested_during_office and after_office_hours:
                 self.stat_holder.stat_inp_req_office_wait.increment()
     
     @property
@@ -149,7 +150,7 @@ class CTScannerModel:
     @property
     def in_office_hours(self) -> bool:
         time = self.sim.current_time
-        weekday = simtime.day(time) <= 4
+        weekday = simtime.weekday(time) <= 4
         office_hours = 8*60 <= simtime.daytime(time) <= 16*60
         if weekday and office_hours:
             return True
