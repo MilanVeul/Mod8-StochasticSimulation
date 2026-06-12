@@ -16,14 +16,14 @@ class StatisticHolder:
     ############### Batch means statistics #################
     SCANNER_UTIL_OUTSIDE = "S. Util Office"
     SCANNER_UTIL_OFFICE = "S. Util Outside"
-    AVG_ACCESS_TIME = "Access Time"
+    AVG_ACCESS_TIME = "Access t."
 
     WAIT_TIME_EMERGENCY = "WT emer"
     WAIT_TIME_OUT = "WT Out"
     # Number of patients waiting outside
-    WAIT_OUTSIDE_ROOM = "Waiting Outside"
+    WAIT_OUTSIDE_ROOM = "Wait Outside"
     # Fraction of Inpatients that request during office hours but cannot be scanned during
-    INPATIENTS_OUTSIDE = "Inp. not s. during office"
+    INPATIENTS_OUTSIDE = "Not sc. office"
     TOTAL_PATIENTS = "Total p."
 
     def __init__(self, model: "CTScannerModel"):
@@ -98,8 +98,8 @@ class BatchMeansMethod(LongTermStatistic):
 
     def report(self, batch_time):
         stats = {}
-        stats[StatisticHolder.SCANNER_UTIL_OFFICE] = self.stat_scanner_util.mean(batch_time, True)
-        stats[StatisticHolder.SCANNER_UTIL_OUTSIDE] = self.stat_scanner_util.mean(batch_time, False)
+        stats[StatisticHolder.SCANNER_UTIL_OFFICE] = self.stat_scanner_util.mean(batch_time, True) / 2
+        stats[StatisticHolder.SCANNER_UTIL_OUTSIDE] = self.stat_scanner_util.mean(batch_time, False) / 1
         stats[StatisticHolder.WAIT_TIME_OUT] = self.stat_wait_time_out.mean()
         stats[StatisticHolder.WAIT_TIME_EMERGENCY] = self.stat_wait_time_emergency.mean()
         stats[StatisticHolder.AVG_ACCESS_TIME] = self.stat_access_time.mean()
