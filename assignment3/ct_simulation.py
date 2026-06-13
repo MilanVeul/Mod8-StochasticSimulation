@@ -111,8 +111,9 @@ class CTScannerModel:
 
     def record_access_time(self, patient: Patient):
         if patient.type != PatientType.OUT: return
-        days = simtime.day(self.sim.current_time) - simtime.day(patient.request_time)
-        self.stat_holder.stat_access_time.record(days)
+        access_time = self.sim.current_time - patient.request_time
+        access_time_days = access_time / (24*60)
+        self.stat_holder.stat_access_time.record(access_time_days)
 
     def record_request(self, patient: Patient):
         # We only record inpatients during office hours

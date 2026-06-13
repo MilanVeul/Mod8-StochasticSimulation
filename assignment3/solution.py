@@ -34,9 +34,6 @@ def print_batch_report(report):
 
 def get_stat(report, stat: str):
     data = [batch[stat] for batch in report]
-    if isinstance(data[0], list):
-        # Transpose so rows represent trucks, and columns represent batches
-        return [list(row) for row in zip(*data)]
     return data
 
 precision = 0.10
@@ -53,7 +50,7 @@ def run():
     print_batch_report(report)
 
     print(f"Precision = {precision}, alpha = {alpha}, r = {num_batches}" )
-    print(f"\nBatch number lower bounds (r = {num_batches}:")
+    print(f"\nBatch number lower bounds (r = {num_batches}):")
     for stat in statistics:
         print(f"  {stat}:", batch_number_lower_bound(get_stat(report, stat), precision=precision, alpha=alpha))
 
