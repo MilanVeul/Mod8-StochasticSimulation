@@ -370,10 +370,7 @@ def schedule_outpatients(model: CTScannerModel, patients: List[Patient], current
                 if is_illegal_slot:
                     continue
 
-                remaining_spots = NUM_SCANNERS_OFFICE_HOURS - model.schedule[day][daypart][slot]
-                remaining_hourly_allocations = max_hourly_outpatients - hourly_outpatients
-                allowed_allocations = min(remaining_spots, remaining_hourly_allocations)
-                for _ in range(allowed_allocations):
+                if model.schedule[day][daypart][slot] == 0: # We only allow one outpatient per slot, to prevent unnecessary congestion
                     schedule_patient_in_slot(model, patients[current_patient], day, daypart, slot, next_week)
                     current_patient += 1
                     hourly_outpatients += 1
