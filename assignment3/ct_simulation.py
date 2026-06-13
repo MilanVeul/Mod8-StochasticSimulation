@@ -325,7 +325,7 @@ class ScheduleNextWeekEvent(Event):
         self.model: CTScannerModel = model
     
     def execute(self, sim: Simulation):
-        print(f"Planning {len(self.model.waiting_list)} outpatients for next week...")
+        # print(f"Planning {len(self.model.waiting_list)} outpatients for next week...")
         self.model.clear_schedule()
         
         waiting_list = self.model.waiting_list.copy()
