@@ -8,16 +8,7 @@ from des_library import Simulation, Event, Uniform, Exponential
 import simtime
 from simtime import DayPart
 from long_term_statistics import LongTermStatistic
-
-SHOWUP_PROBABILITY = 0.84
-
-NUM_CHAIRS = 3
-NUM_SCANNERS_OFFICE_HOURS = 2
-NUM_SCANNERS_OUTSIDE_OFFICE_HOURS = 1
-
-SLOTS_PER_DAYPART = 16
-MAX_SCHEDULED_OUTPATIENTS_MORNING = 4
-MAX_SCHEDULED_OUTPATIENTS_AFTERNOON = 3
+from constants import *
 
 class PatientType(Enum):
     IN = 1

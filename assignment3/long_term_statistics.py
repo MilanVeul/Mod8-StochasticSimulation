@@ -7,15 +7,15 @@ if TYPE_CHECKING:
     from ct_simulation import CTScannerModel
 
 from extra_statistics import ScannerUtilityStatistic
+from constants import *
 
-####################################3
-
+####################################
 class StatisticHolder:
     BATCH_LENGTH = 'batch_length'
 
     ############### Batch means statistics #################
-    SCANNER_UTIL_OUTSIDE = "S. Util Office"
-    SCANNER_UTIL_OFFICE = "S. Util Outside"
+    SCANNER_UTIL_OUTSIDE = "S. Util Outside"
+    SCANNER_UTIL_OFFICE = "S. Util Office"
     AVG_ACCESS_TIME = "Access t."
 
     WAIT_TIME_EMERGENCY = "WT emer"
@@ -98,8 +98,8 @@ class BatchMeansMethod(LongTermStatistic):
 
     def report(self, batch_time):
         stats = {}
-        stats[StatisticHolder.SCANNER_UTIL_OFFICE] = self.stat_scanner_util.mean(batch_time, True) / 2
-        stats[StatisticHolder.SCANNER_UTIL_OUTSIDE] = self.stat_scanner_util.mean(batch_time, False) / 1
+        stats[StatisticHolder.SCANNER_UTIL_OFFICE] = self.stat_scanner_util.mean(batch_time, True) / NUM_SCANNERS_OFFICE_HOURS
+        stats[StatisticHolder.SCANNER_UTIL_OUTSIDE] = self.stat_scanner_util.mean(batch_time, False) / NUM_SCANNERS_OUTSIDE_OFFICE_HOURS
         stats[StatisticHolder.WAIT_TIME_OUT] = self.stat_wait_time_out.mean()
         stats[StatisticHolder.WAIT_TIME_EMERGENCY] = self.stat_wait_time_emergency.mean()
         stats[StatisticHolder.AVG_ACCESS_TIME] = self.stat_access_time.mean()
